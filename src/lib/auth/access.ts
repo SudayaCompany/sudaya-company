@@ -135,6 +135,7 @@ export type AccessibleOutlet = {
   name: string;
   brandId: string;
   brandName: string;
+  timezone: string;
 };
 
 /** Outlet yang boleh diakses user: semua (grant company-wide) atau yang di-assign. */
@@ -155,6 +156,7 @@ export async function listAccessibleOutlets(
       name: outlets.name,
       brandId: brands.id,
       brandName: brands.name,
+      timezone: outlets.timezone,
     })
     .from(outlets)
     .innerJoin(brands, eq(brands.id, outlets.brandId))

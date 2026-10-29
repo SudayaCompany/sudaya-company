@@ -50,7 +50,9 @@ async function Storefront({ searchParams }: Pick<PageProps<"/order">, "searchPar
     );
   }
 
-  return <StorefrontView storefront={storefront} table={table} />;
+  // Channel dicatat untuk laporan: QR meja, QR kasir (?src=qr), atau web.
+  const channel = table ? "qr_table" : params.src === "qr" ? "qr_counter" : "website";
+  return <StorefrontView storefront={storefront} table={table} channel={channel} />;
 }
 
 function Notice(props: React.ComponentProps<typeof EmptyState>) {

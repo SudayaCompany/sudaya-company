@@ -30,6 +30,7 @@ import {
 } from "@/lib/catalog/admin-ops";
 import { menuImageUrl } from "@/lib/catalog/image-url";
 import { formatRupiah } from "@/lib/format";
+import { formatQty } from "@/lib/inventory/units";
 import { firstValues, toQuery } from "@/lib/search-params";
 
 import { AvailabilitySwitch, ProductRowActions } from "./product-row-actions";
@@ -192,13 +193,30 @@ async function Products({ searchParams }: Pick<PageProps<"/admin/products">, "se
                       </TableCell>
                       {outlet ? (
                         <TableCell>
-                          <AvailabilitySwitch
-                            productId={product.id}
-                            productName={product.name}
-                            outletId={outlet.id}
-                            isAvailable={product.isAvailable}
-                            disabled={!canToggleAvailability}
-                          />
+                          <div className="flex flex-col items-start gap-1">
+                            <AvailabilitySwitch
+                              productId={product.id}
+                              productName={product.name}
+                              outletId={outlet.id}
+                              isAvailable={product.isAvailable}
+                              disabled={!canToggleAvailability}
+                            />
+                            {product.stockQty !== null ? (
+                              <span
+                                className={
+                                  product.inventoryUnavailable
+                                    ? "text-xs font-medium text-destructive"
+                                    : product.lowStock
+                                      ? "text-xs font-medium text-foreground"
+                                      : "text-xs text-muted-foreground"
+                                }
+                              >
+                                {product.inventoryUnavailable
+                                  ? "Stok habis — sold out otomatis"
+                                  : `${product.lowStock ? "Stok menipis · " : "Stok "}${formatQty(product.stockQty, product.stockUnit ?? undefined)}`}
+                              </span>
+                            ) : null}
+                          </div>
                         </TableCell>
                       ) : null}
                       <TableCell>

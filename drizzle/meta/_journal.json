@@ -15,6 +15,34 @@
       "when": 1793256004368,
       "tag": "0001_catalog_slug_sku_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793261412723,
+      "tag": "0002_order_access_token",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793269696946,
+      "tag": "0003_hardening_inventory",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793269743199,
+      "tag": "0004_ops_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793270568709,
+      "tag": "0005_inventory_document_ref",
+      "breakpoints": true
     }
   ]
 }

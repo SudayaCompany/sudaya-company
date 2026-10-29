@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getPublicEnv } from "@/lib/env";
 
 /** Area internal yang wajib login. Customer (/order, /kiosk) tetap boleh guest. */
-const PROTECTED_PREFIXES = ["/admin", "/staff", "/kds", "/auth/set-password"];
+const PROTECTED_PREFIXES = ["/admin", "/staff", "/pos", "/kds", "/auth/set-password"];
 
 /**
  * Me-refresh cookie session Supabase di setiap request, lalu melakukan

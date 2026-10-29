@@ -14,8 +14,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // forbidden() + app/forbidden.tsx untuk halaman 403.
     authInterrupts: true,
-    // Upload foto menu lewat Server Action (maks 2 MB + overhead form).
-    serverActions: { bodySizeLimit: "3mb" },
+    // Upload foto lewat Server Action: menu maks 2 MB, bukti stok maks 3 MB
+    // (+ overhead form). Tetap di bawah batas body Vercel 4,5 MB.
+    serverActions: { bodySizeLimit: "4mb" },
   },
   turbopack: {
     rules: {

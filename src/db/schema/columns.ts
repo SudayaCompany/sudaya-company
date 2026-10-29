@@ -27,3 +27,9 @@ export const money = () => bigint({ mode: "number" });
 
 /** Kuantitas stok (gram, ml, pcs) — bisa pecahan. */
 export const quantity = () => numeric({ precision: 14, scale: 3 });
+
+/**
+ * Harga pokok per satuan stok (mis. Rp 18,5 per ml). Numeric eksak — tidak
+ * pernah float — karena satuan dasar kecil membuat harga per unit pecahan.
+ */
+export const unitCost = () => numeric({ precision: 16, scale: 4 });

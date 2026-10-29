@@ -11,14 +11,25 @@ import { authUsers } from "drizzle-orm/supabase";
 
 import { createDatabase } from "@/db/client";
 import {
+  approvals,
   auditLogs,
   brands,
   categories,
   companies,
+  inventoryAdjustments,
+  inventoryItems,
+  inventoryTransactions,
   modifierGroups,
+  orderNumberCounters,
+  orders,
   outlets,
+  payments,
+  productRecipeItems,
   products,
+  rateLimitCounters,
+  refunds,
   roles,
+  stockOpnames,
   userRoles,
   users,
 } from "@/db/schema";
@@ -26,6 +37,8 @@ import { seedInitialData } from "@/db/seed";
 import { loadCurrentUser, type CurrentUser } from "@/lib/auth/access";
 import type { RoleCode } from "@/lib/auth/rbac";
 import { MENU_IMAGE_BUCKET } from "@/lib/catalog/image-url";
+import { EVIDENCE_BUCKET } from "@/lib/inventory/evidence-types";
+import { rateLimitKeyHash } from "@/lib/security/rate-limit";
 
 /** PNG 1×1 yang valid, untuk test upload foto. */
 export const TINY_PNG = Uint8Array.from(
@@ -65,6 +78,9 @@ export function createLiveContext() {
   const runId = randomBytes(4).toString("hex");
   const emailPrefix = `sudaya-test-${runId}-`;
   const companyIds: string[] = [];
+  /** Key rate limit yang dipakai test (dihapus persis, bukan pola). */
+  const rateLimitKeys = new Set<string>();
+  const trackRateLimitKey = (key: string) => rateLimitKeys.add(rateLimitKeyHash(key));
 
   const newEmail = () => `${emailPrefix}${randomBytes(3).toString("hex")}@example.com`;
 
@@ -158,6 +174,29 @@ export function createLiveContext() {
     try {
       if (companyIds.length) {
         await db.delete(auditLogs).where(inArray(auditLogs.companyId, companyIds));
+        // Data transaksi merujuk users (created_by/confirmed_by/requested_by),
+        // jadi dihapus sebelum akun Auth. order_items ikut cascade.
+        await db.delete(refunds).where(inArray(refunds.companyId, companyIds));
+        await db.delete(payments).where(inArray(payments.companyId, companyIds));
+        // Inventory (merujuk approvals & users). Ledger append-only: DELETE
+        // hanya diizinkan dengan flag maintenance di transaksi yang sama, dan
+        // dibatasi ke company test run ini.
+        await db.delete(inventoryAdjustments).where(inArray(inventoryAdjustments.companyId, companyIds));
+        await db.delete(stockOpnames).where(inArray(stockOpnames.companyId, companyIds));
+        await db.transaction(async (tx) => {
+          await tx.execute(sql`select set_config('sudaya.ledger_maintenance', 'on', true)`);
+          await tx.delete(inventoryTransactions).where(inArray(inventoryTransactions.companyId, companyIds));
+        });
+        await db.delete(approvals).where(inArray(approvals.companyId, companyIds));
+        await db.delete(orders).where(inArray(orders.companyId, companyIds));
+        await db
+          .delete(orderNumberCounters)
+          .where(
+            inArray(
+              orderNumberCounters.outletId,
+              db.select({ id: outlets.id }).from(outlets).where(inArray(outlets.companyId, companyIds)),
+            ),
+          );
       }
       const testAuthUsers = await db
         .select({ id: authUsers.id })
@@ -178,17 +217,32 @@ export function createLiveContext() {
             const paths = (files ?? []).map((f) => `${companyId}/${folder.name}/${f.name}`);
             if (paths.length) await admin.storage.from(MENU_IMAGE_BUCKET).remove(paths);
           }
+          // Bukti foto inventory: <companyId>/<outletId>/<file>.
+          const { data: evidenceFolders } = await admin.storage.from(EVIDENCE_BUCKET).list(companyId);
+          for (const folder of evidenceFolders ?? []) {
+            const { data: files } = await admin.storage
+              .from(EVIDENCE_BUCKET)
+              .list(`${companyId}/${folder.name}`);
+            const paths = (files ?? []).map((f) => `${companyId}/${folder.name}/${f.name}`);
+            if (paths.length) await admin.storage.from(EVIDENCE_BUCKET).remove(paths);
+          }
         }
         // Katalog dulu (FK ke brand/outlet); cascade ke outlet_products,
         // product_modifier_groups, dan modifiers.
+        await db.delete(productRecipeItems).where(inArray(productRecipeItems.companyId, companyIds));
         await db.delete(products).where(inArray(products.companyId, companyIds));
         await db.delete(modifierGroups).where(inArray(modifierGroups.companyId, companyIds));
         await db.delete(categories).where(inArray(categories.companyId, companyIds));
+        // Setelah products (cascade outlet_products yang merujuk item).
+        await db.delete(inventoryItems).where(inArray(inventoryItems.companyId, companyIds));
         await db.delete(users).where(inArray(users.companyId, companyIds));
         await db.delete(roles).where(inArray(roles.companyId, companyIds));
         await db.delete(outlets).where(inArray(outlets.companyId, companyIds));
         await db.delete(brands).where(inArray(brands.companyId, companyIds));
         await db.delete(companies).where(inArray(companies.id, companyIds));
+      }
+      if (rateLimitKeys.size) {
+        await db.delete(rateLimitCounters).where(inArray(rateLimitCounters.key, [...rateLimitKeys]));
       }
     } finally {
       await client.end();
@@ -219,6 +273,7 @@ export function createLiveContext() {
     createAuthOnly,
     createAuthAccount,
     countAudit,
+    trackRateLimitKey,
     cleanup,
   };
 }

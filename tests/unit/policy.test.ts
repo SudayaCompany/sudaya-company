@@ -154,6 +154,26 @@ describe("routing berdasarkan akses", () => {
     }
   });
 
+  it("inventory: lihat butuh inventory.view; stok masuk/keluar sesuai permission", () => {
+    const manager = subject(grant("manager", OUTLET_A));
+    const admin = subject(grant("admin", OUTLET_A));
+    expect(canAccessPath(cashier, "/admin/inventory")).toBe(false);
+    expect(canAccessPath(barista, "/admin/inventory")).toBe(true);
+    expect(canAccessPath(barista, "/admin/inventory/stock-out")).toBe(true);
+    expect(canAccessPath(barista, "/admin/inventory/waste")).toBe(true);
+    expect(canAccessPath(barista, "/admin/inventory/stock-in")).toBe(false);
+    expect(canAccessPath(owner, "/admin/inventory/opname")).toBe(true);
+    expect(canAccessPath(owner, "/admin/inventory/stock-in")).toBe(false);
+    for (const path of ["/admin/inventory/stock-in", "/admin/inventory/stock-out", "/admin/inventory/items"]) {
+      expect(canAccessPath(manager, path), path).toBe(true);
+      expect(canAccessPath(admin, path), path).toBe(true);
+    }
+    // Approval stok hanya Manager/Owner; Admin & barista tidak.
+    expect(hasPermission(admin, "approval.approve")).toBe(false);
+    expect(hasPermission(barista, "inventory.adjust")).toBe(false);
+    expect(hasPermission(manager, "approval.approve", { outletId: OUTLET_A })).toBe(true);
+  });
+
   it("postLoginPath memakai next hanya jika aman & diizinkan", () => {
     expect(postLoginPath(superAdmin, "/admin/users")).toBe("/admin/users");
     expect(postLoginPath(barista, "/admin")).toBe("/staff");

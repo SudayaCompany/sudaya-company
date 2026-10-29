@@ -7,6 +7,7 @@ import type { DbExecutor } from "@/db/client";
 import {
   brands,
   categories,
+  inventoryItems,
   modifierGroups,
   modifiers,
   outletProducts,
@@ -35,9 +36,31 @@ export type Storefront = {
 
 const OUTLET_CODE = /^[A-Za-z0-9_-]{1,32}$/;
 
+/**
+ * Ketersediaan (PRD §21, §73) — tiga hal terpisah:
+ * - manual sold out  : outlet_products.is_available = false (diatur admin,
+ *   tidak pernah ditimpa sinkronisasi stok);
+ * - inventory unavailable : produk jadi yang terhubung ke item stok dengan
+ *   saldo 0 atau item nonaktif;
+ * - effective = tidak manual sold out DAN tidak inventory unavailable.
+ * Minuman racikan (tanpa link item / BOM) hanya mengikuti status manual.
+ */
+export function availabilityOf(row: {
+  manualAvailable: boolean;
+  linkedItemId: string | null;
+  linkedStock: string | null;
+  linkedActive: boolean | null;
+}) {
+  const manualSoldOut = !row.manualAvailable;
+  const inventoryUnavailable =
+    row.linkedItemId !== null && (!row.linkedActive || Number(row.linkedStock ?? 0) <= 0);
+  return { manualSoldOut, inventoryUnavailable, effective: !manualSoldOut && !inventoryUnavailable };
+}
+
 export async function loadStorefront(
   db: DbExecutor,
   outletCode: string,
+  options: { withStock?: boolean } = {},
 ): Promise<Storefront | null> {
   if (!OUTLET_CODE.test(outletCode)) return null;
 
@@ -77,12 +100,22 @@ export async function loadStorefront(
           imagePath: products.imagePath,
           categoryId: products.categoryId,
           price: sql<number>`coalesce(${outletProducts.priceOverride}, ${products.basePrice})`.mapWith(Number),
-          isAvailable: sql<boolean>`coalesce(${outletProducts.isAvailable}, true)`,
+          manualAvailable: sql<boolean>`coalesce(${outletProducts.isAvailable}, true)`,
+          linkedItemId: inventoryItems.id,
+          linkedStock: inventoryItems.stockQty,
+          linkedActive: inventoryItems.isActive,
         })
         .from(products)
         .leftJoin(
           outletProducts,
           and(eq(outletProducts.productId, products.id), eq(outletProducts.outletId, outlet.id)),
+        )
+        .leftJoin(
+          inventoryItems,
+          and(
+            eq(inventoryItems.id, outletProducts.inventoryItemId),
+            eq(inventoryItems.outletId, outlet.id),
+          ),
         )
         .where(
           and(
@@ -154,6 +187,7 @@ export async function loadStorefront(
         // Grup tanpa opsi aktif tidak bisa dipilih — jangan blokir pesanan.
         .filter((g) => g.modifiers.length > 0);
       const groupIdSet = new Set(groups.map((g) => g.id));
+      const availability = availabilityOf(p);
       return {
         id: p.id,
         name: p.name,
@@ -162,7 +196,13 @@ export async function loadStorefront(
         imageUrl: menuImageUrl(p.imagePath),
         categoryId: p.categoryId,
         price: p.price,
-        isAvailable: p.isAvailable,
+        isAvailable: availability.effective,
+        ...(options.withStock
+          ? {
+              stockLimit:
+                p.linkedItemId === null ? null : Math.max(0, Math.floor(Number(p.linkedStock ?? 0))),
+            }
+          : {}),
         groups,
         defaultModifierIds: optionRows
           .filter((o) => o.isDefault && groupIdSet.has(o.groupId))

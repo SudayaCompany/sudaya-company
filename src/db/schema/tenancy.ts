@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   doublePrecision,
   integer,
   jsonb,
@@ -43,7 +45,9 @@ export type OperatingHours = Partial<
 >;
 
 // PRD §74
-export const outlets = pgTable("outlets", {
+export const outlets = pgTable(
+  "outlets",
+  {
   id: id(),
   companyId: uuid()
     .notNull()
@@ -63,10 +67,22 @@ export const outlets = pgTable("outlets", {
   timezone: text().notNull().default("Asia/Jakarta"),
   /** PRD §37 — prefix nomor order, mis. SDY → SDY-001. */
   orderNumberPrefix: text().notNull().default("SDY"),
+  /**
+   * Order belum dibayar otomatis kedaluwarsa setelah N menit (dihitung dari
+   * waktu database, dijalankan pg_cron → public.expire_pending_orders).
+   */
+  pendingPaymentTtlMinutes: integer().notNull().default(15),
   operatingHours: jsonb().$type<OperatingHours>(),
   isActive: boolean().notNull().default(true),
   ...timestamps(),
-}).enableRLS();
+  },
+  (t) => [
+    check(
+      "outlets_pending_payment_ttl_range",
+      sql`${t.pendingPaymentTtlMinutes} between 1 and 1440`,
+    ),
+  ],
+).enableRLS();
 
 /** PRD §119 — kolom wajib tabel transaksi agar siap multi-brand/outlet. */
 export const tenantColumns = () => ({

@@ -2,6 +2,8 @@ import {
   CoffeeIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
+  PackageIcon,
+  ReceiptTextIcon,
   ScrollTextIcon,
   SlidersHorizontalIcon,
   TagsIcon,
@@ -21,6 +23,8 @@ import { NavLinks, type NavItem } from "./nav-links";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboardIcon /> },
+  { href: "/admin/orders", label: "Order", icon: <ReceiptTextIcon /> },
+  { href: "/admin/inventory", label: "Inventory", icon: <PackageIcon /> },
   { href: "/admin/products", label: "Produk", icon: <CoffeeIcon /> },
   { href: "/admin/categories", label: "Kategori", icon: <TagsIcon /> },
   { href: "/admin/modifiers", label: "Modifier", icon: <SlidersHorizontalIcon /> },

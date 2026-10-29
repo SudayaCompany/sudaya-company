@@ -7,14 +7,15 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { id, money, timestamps } from "./columns";
+import { id, money, quantity, timestamps } from "./columns";
 import { modifierSelection } from "./enums";
 import { inventoryItems } from "./inventory";
-import { brands, companies, outlets } from "./tenancy";
+import { brands, companies, outlets, tenantColumns } from "./tenancy";
 
 // Menu dikelola per brand; harga & ketersediaan per outlet ada di
 // outlet_products agar multi-outlet tidak mengubah struktur (PRD §75).
@@ -106,6 +107,29 @@ export const outletProducts = pgTable(
     ...timestamps(),
   },
   (t) => [primaryKey({ columns: [t.outletId, t.productId] })],
+).enableRLS();
+
+/**
+ * Persiapan resep/BOM minuman racikan (Phase 2) — BELUM dipakai. Tanpa baris
+ * di sini bahan baku tidak pernah dipotong otomatis saat penjualan; sold out
+ * minuman racikan tetap manual (outlet_products.is_available).
+ */
+export const productRecipeItems = pgTable(
+  "product_recipe_items",
+  {
+    id: id(),
+    ...tenantColumns(),
+    productId: uuid()
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    itemId: uuid()
+      .notNull()
+      .references(() => inventoryItems.id),
+    /** Jumlah per 1 porsi, dalam satuan dasar item. */
+    quantity: quantity().notNull(),
+    ...timestamps(),
+  },
+  (t) => [unique().on(t.outletId, t.productId, t.itemId)],
 ).enableRLS();
 
 /**

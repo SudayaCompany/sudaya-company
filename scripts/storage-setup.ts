@@ -4,6 +4,8 @@
 // Kebijakan:
 // - menu-images: PUBLIC read (foto menu untuk customer guest), upload/hapus
 //   hanya lewat server (service role). Tanpa policy anon/authenticated.
+// - inventory-evidence: PRIVATE (bukti foto waste/stok keluar), dibuka lewat
+//   signed URL setelah cek permission.
 // - Bucket lain (mis. absensi, biometrik) WAJIB private. Script ini menolak
 //   melanjutkan jika menemukan bucket publik selain menu-images.
 
@@ -16,6 +18,7 @@ import {
   MENU_IMAGE_BUCKET,
   MENU_IMAGE_TYPES,
 } from "@/lib/catalog/images";
+import { EVIDENCE_BUCKET, EVIDENCE_TYPES, MAX_EVIDENCE_BYTES } from "@/lib/inventory/evidence";
 
 async function main() {
   const supabase = createClient(
@@ -36,6 +39,20 @@ async function main() {
     : await supabase.storage.createBucket(MENU_IMAGE_BUCKET, options);
   if (error) throw new Error(`Gagal menyiapkan bucket ${MENU_IMAGE_BUCKET}: ${error.message}`);
   console.log(`✔ Bucket ${MENU_IMAGE_BUCKET}: ${existing ? "diselaraskan" : "dibuat"} (publik, maks 2 MB, JPG/PNG/WebP)`);
+
+  const evidenceOptions = {
+    public: false,
+    fileSizeLimit: MAX_EVIDENCE_BYTES,
+    allowedMimeTypes: [...EVIDENCE_TYPES],
+  };
+  const { data: evidence } = await supabase.storage.getBucket(EVIDENCE_BUCKET);
+  const { error: evidenceError } = evidence
+    ? await supabase.storage.updateBucket(EVIDENCE_BUCKET, evidenceOptions)
+    : await supabase.storage.createBucket(EVIDENCE_BUCKET, evidenceOptions);
+  if (evidenceError) {
+    throw new Error(`Gagal menyiapkan bucket ${EVIDENCE_BUCKET}: ${evidenceError.message}`);
+  }
+  console.log(`✔ Bucket ${EVIDENCE_BUCKET}: ${evidence ? "diselaraskan" : "dibuat"} (private, maks 3 MB, JPG/PNG/WebP)`);
 
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
   if (listError) throw new Error(listError.message);

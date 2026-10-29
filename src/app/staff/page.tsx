@@ -1,6 +1,7 @@
 import {
   ClipboardCheckIcon,
   MonitorIcon,
+  PackageIcon,
   ShoppingBagIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -45,7 +46,7 @@ const SHORTCUTS: Shortcut[] = [
     description: "Input pesanan customer & pembayaran",
     icon: ShoppingBagIcon,
     permission: "order.create",
-    href: null,
+    href: "/pos",
   },
   {
     label: "Barista Display",
@@ -53,6 +54,13 @@ const SHORTCUTS: Shortcut[] = [
     icon: MonitorIcon,
     permission: "kds.view",
     href: "/kds",
+  },
+  {
+    label: "Stok",
+    description: "Cek stok, catat stok keluar & waste",
+    icon: PackageIcon,
+    permission: "inventory.view",
+    href: "/admin/inventory",
   },
 ];
 

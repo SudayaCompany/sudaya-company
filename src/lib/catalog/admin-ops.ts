@@ -24,6 +24,7 @@ import type { Database, DbExecutor } from "@/db/client";
 import {
   brands,
   categories,
+  inventoryItems,
   modifierGroups,
   modifiers,
   outletProducts,
@@ -564,7 +565,11 @@ export async function listProducts(
   params: ProductListParams,
 ) {
   assertView(actor);
-  const available = sql<boolean>`coalesce(${outletProducts.isAvailable}, true)`;
+  // Manual sold out (toggle admin) dan stok produk jadi dinilai terpisah;
+  // filter "sold out" memakai ketersediaan efektif (lihat storefront.availabilityOf).
+  const manual = sql<boolean>`coalesce(${outletProducts.isAvailable}, true)`;
+  const inventoryUnavailable = sql<boolean>`(${inventoryItems.id} is not null and (not ${inventoryItems.isActive} or ${inventoryItems.stockQty} <= 0))`;
+  const available = sql<boolean>`(${manual} and not ${inventoryUnavailable})`;
 
   const conditions: (SQL | undefined)[] = [
     eq(products.brandId, brandId),
@@ -598,10 +603,16 @@ export async function listProducts(
         : products.name;
   const order = params.dir === "desc" ? desc(sortColumn) : asc(sortColumn);
 
+  const joinItem = and(
+    eq(inventoryItems.id, outletProducts.inventoryItemId),
+    eq(inventoryItems.outletId, outletProducts.outletId),
+  );
+
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(products)
     .leftJoin(outletProducts, joinOutlet)
+    .leftJoin(inventoryItems, joinItem)
     .where(where);
 
   const pageCount = Math.max(1, Math.ceil(total / PRODUCT_PAGE_SIZE));
@@ -618,11 +629,17 @@ export async function listProducts(
       isActive: products.isActive,
       updatedAt: products.updatedAt,
       categoryName: categories.name,
-      isAvailable: available,
+      /** Status manual (toggle). */
+      isAvailable: manual,
+      inventoryUnavailable,
+      lowStock: sql<boolean>`coalesce(${inventoryItems.stockQty} > 0 and ${inventoryItems.stockQty} <= ${inventoryItems.minimumStock}, false)`,
+      stockQty: inventoryItems.stockQty,
+      stockUnit: inventoryItems.unit,
     })
     .from(products)
     .innerJoin(categories, eq(categories.id, products.categoryId))
     .leftJoin(outletProducts, joinOutlet)
+    .leftJoin(inventoryItems, joinItem)
     .where(where)
     .orderBy(order, asc(products.id))
     .limit(PRODUCT_PAGE_SIZE)

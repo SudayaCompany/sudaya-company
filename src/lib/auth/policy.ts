@@ -97,8 +97,13 @@ export const ROUTE_ACCESS = {
   "/admin/products": ["product.view"],
   "/admin/categories": ["product.view"],
   "/admin/modifiers": ["product.view"],
+  "/admin/orders": ["order.view"],
+  "/admin/inventory/stock-in": ["inventory.receive"],
+  "/admin/inventory/stock-out": ["inventory.issue"],
+  "/admin/inventory": ["inventory.view"],
   "/admin": ["dashboard.view"],
   "/staff": STAFF_APP_PERMISSIONS,
+  "/pos": ["order.create"],
   "/kds": ["kds.view"],
 } as const satisfies Record<string, readonly Permission[]>;
 

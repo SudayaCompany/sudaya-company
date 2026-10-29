@@ -1,0 +1,2 @@
+ALTER TABLE "inventory_transactions" ADD COLUMN "document_ref" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "stock_opnames_one_open_per_outlet" ON "stock_opnames" USING btree ("outlet_id") WHERE "stock_opnames"."status" in ('draft', 'submitted');

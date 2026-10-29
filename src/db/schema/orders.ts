@@ -10,6 +10,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { sql } from "drizzle-orm";
+
 import { id, money, timestamps } from "./columns";
 import { modifiers, products } from "./catalog";
 import { customers } from "./customers";
@@ -73,6 +75,17 @@ export const orders = pgTable(
     completedAt: timestamp({ withTimezone: true }),
     cancelledAt: timestamp({ withTimezone: true }),
     cancelReason: text(),
+    /**
+     * Batas waktu bayar (now() database + TTL outlet). Lewat dari ini order
+     * pending_payment dibatalkan otomatis; order yang sudah dibayar tidak.
+     */
+    expiresAt: timestamp({ withTimezone: true }),
+
+    /**
+     * SHA-256 token akses guest (halaman status). Token asli hanya ada di
+     * cookie httpOnly milik customer, tidak pernah disimpan atau di-log.
+     */
+    accessTokenHash: text(),
 
     /** null untuk order customer guest. */
     createdBy: createdBy(),
@@ -82,7 +95,11 @@ export const orders = pgTable(
     unique().on(t.outletId, t.idempotencyKey),
     unique().on(t.outletId, t.businessDate, t.queueNumber),
     index().on(t.outletId, t.status, t.paidAt),
+    index().on(t.outletId, t.createdAt),
     index().on(t.customerId),
+    index("orders_pending_expiry_idx")
+      .on(t.expiresAt)
+      .where(sql`${t.status} = 'pending_payment'`),
   ],
 ).enableRLS();
 

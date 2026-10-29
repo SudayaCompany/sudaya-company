@@ -23,7 +23,13 @@ export type PricingProduct = {
   name: string;
   /** Harga efektif outlet (override atau harga dasar). */
   price: number;
+  /** Ketersediaan efektif: tidak sold out manual DAN stok produk jadi (jika terhubung) ada. */
   isAvailable: boolean;
+  /**
+   * Maks. unit yang bisa dipesan (stok produk jadi). Hanya diisi untuk
+   * hitungan server (quote/checkout), tidak ikut katalog publik.
+   */
+  stockLimit?: number | null;
   groups: PricingGroup[];
 };
 
@@ -55,7 +61,7 @@ export function priceSelection(
   selectedModifierIds: readonly string[],
 ): PricedSelection {
   if (!product.isAvailable) {
-    return { ok: false, error: "Maaf, produk baru saja habis." };
+    return { ok: false, error: "Maaf, produk ini baru saja tidak tersedia." };
   }
 
   const selected = new Set(selectedModifierIds);

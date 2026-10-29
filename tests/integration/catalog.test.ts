@@ -323,7 +323,7 @@ describe.skipIf(!hasLiveEnv)("katalog: admin ops, storefront & storage (DB live)
       expect(quote).toMatchObject({ ok: true, total: (27000 + 7000 + 5000) * 2 });
       if (quote.ok) {
         expect(quote.lines[1]).toMatchObject({ ok: false, error: "Pilih Size." });
-        expect(quote.lines[2]).toMatchObject({ ok: false, error: "Maaf, produk baru saja habis." });
+        expect(quote.lines[2]).toMatchObject({ ok: false, error: "Maaf, produk ini baru saja tidak tersedia." });
       }
 
       await setProductActive(ctx.db, adminA.current, { productId: americano.id, isActive: false }, audit);

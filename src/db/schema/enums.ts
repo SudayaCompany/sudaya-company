@@ -65,15 +65,18 @@ export const approvalType = pgEnum("approval_type", [
   "stock_adjustment",
   "expense",
   "outside_duty",
+  "stock_opname",
 ]);
 
 // PRD §18
 export const inventoryItemKind = pgEnum("inventory_item_kind", [
   "raw_material",
   "finished_good",
+  "packaging",
 ]);
 
-// PRD §22 — tanda (+/-) disimpan di kolom quantity ledger.
+// PRD §22 — tanda (+/-) disimpan di kolom quantity ledger. Nilai baru
+// selalu ditambah di akhir (ALTER TYPE ... ADD VALUE).
 export const inventoryTransactionType = pgEnum("inventory_transaction_type", [
   "purchase",
   "return",
@@ -85,12 +88,18 @@ export const inventoryTransactionType = pgEnum("inventory_transaction_type", [
   "internal_use",
   "adjustment_out",
   "opname",
+  "opening",
+  "stock_out",
+  /** Membalik satu movement lain (reverses_id); satu-satunya cara koreksi. */
+  "reversal",
 ]);
 
 export const stockOpnameStatus = pgEnum("stock_opname_status", [
   "draft",
   "submitted",
   "applied",
+  "rejected",
+  "cancelled",
 ]);
 
 export const attendanceStatus = pgEnum("attendance_status", [

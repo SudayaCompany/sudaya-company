@@ -10,10 +10,21 @@ import type { Storefront, StorefrontProduct } from "@/lib/catalog/storefront";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { CartBar, CartProvider } from "./cart";
+import { CartBar, CartProvider, type StorefrontMode } from "./cart";
 import { ProductSheet } from "./product-sheet";
 
-export function StorefrontView({ storefront, table }: { storefront: Storefront; table: string | null }) {
+export function StorefrontView({
+  storefront,
+  table,
+  channel,
+  mode = "order",
+}: {
+  storefront: Storefront;
+  table: string | null;
+  channel: "qr_table" | "qr_counter" | "website" | "kiosk";
+  mode?: StorefrontMode;
+}) {
+  const kiosk = mode === "kiosk";
   const [openProduct, setOpenProduct] = useState<StorefrontProduct | null>(null);
   const sections = storefront.categories
     .map((category) => ({
@@ -23,14 +34,14 @@ export function StorefrontView({ storefront, table }: { storefront: Storefront; 
     .filter((s) => s.products.length > 0);
 
   return (
-    <CartProvider outlet={storefront.outlet.code}>
+    <CartProvider outlet={storefront.outlet.code} channel={channel} mode={mode} table={table}>
       <div className="flex min-h-svh flex-col bg-background">
         <header className="relative overflow-hidden bg-neutral-950 text-white">
           <div className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-brand/20 blur-3xl" aria-hidden />
           <div className="relative mx-auto w-full max-w-5xl px-4 pt-6 pb-8">
             <Brand tone="light" className="text-lg" />
-            <h1 className="mt-6 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              Mau ngopi apa hari ini?
+            <h1 className={cn("mt-6 font-semibold tracking-tight text-balance", kiosk ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl")}>
+              {kiosk ? "Pesan di sini, bayar di kasir" : "Mau ngopi apa hari ini?"}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-400">
               <span className="inline-flex items-center gap-1">
@@ -64,7 +75,7 @@ export function StorefrontView({ storefront, table }: { storefront: Storefront; 
                   <a
                     key={category.id}
                     href={`#kategori-${category.slug}`}
-                    className="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors hover:border-foreground"
+                    className={cn("shrink-0 rounded-full border font-medium transition-colors hover:border-foreground", kiosk ? "px-6 py-3 text-lg" : "px-4 py-1.5 text-sm")}
                   >
                     {category.name}
                   </a>
@@ -75,10 +86,10 @@ export function StorefrontView({ storefront, table }: { storefront: Storefront; 
             <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pt-6 pb-32">
               {sections.map(({ category, products }) => (
                 <section key={category.id} id={`kategori-${category.slug}`} className="scroll-mt-20">
-                  <h2 className="mb-3 text-lg font-semibold tracking-tight">{category.name}</h2>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  <h2 className={cn("mb-3 font-semibold tracking-tight", kiosk ? "text-2xl" : "text-lg")}>{category.name}</h2>
+                  <div className={cn("grid gap-3", kiosk ? "grid-cols-2 gap-4 md:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4")}>
                     {products.map((product) => (
-                      <ProductCard key={product.id} product={product} onOpen={() => setOpenProduct(product)} />
+                      <ProductCard key={product.id} product={product} large={kiosk} onOpen={() => setOpenProduct(product)} />
                     ))}
                   </div>
                 </section>
@@ -94,7 +105,7 @@ export function StorefrontView({ storefront, table }: { storefront: Storefront; 
   );
 }
 
-function ProductCard({ product, onOpen }: { product: StorefrontProduct; onOpen: () => void }) {
+function ProductCard({ product, large, onOpen }: { product: StorefrontProduct; large: boolean; onOpen: () => void }) {
   const soldOut = !product.isAvailable;
   return (
     <button
@@ -122,9 +133,9 @@ function ProductCard({ product, onOpen }: { product: StorefrontProduct; onOpen: 
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
-        <p className="line-clamp-2 text-sm font-medium">{product.name}</p>
+        <p className={cn("line-clamp-2 font-medium", large ? "text-lg" : "text-sm")}>{product.name}</p>
         <div className="mt-auto flex min-h-8 items-center justify-between pt-1">
-          <span className="text-sm font-semibold tabular-nums">{formatRupiah(product.price)}</span>
+          <span className={cn("font-semibold tabular-nums", large ? "text-lg" : "text-sm")}>{formatRupiah(product.price)}</span>
           {soldOut ? null : (
             <span className="flex size-7 items-center justify-center rounded-full bg-neutral-950 text-white transition-colors group-hover:bg-brand group-hover:text-brand-foreground">
               <PlusIcon className="size-4" aria-hidden />

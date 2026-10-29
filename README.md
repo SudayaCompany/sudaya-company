@@ -17,6 +17,7 @@ Semua interface berada dalam satu app Next.js:
 | `/order` | Sudaya Order     | Customer (PWA)            | Opsional |
 | `/kiosk` | Sudaya Kiosk     | Customer di outlet        | Tidak   |
 | `/staff` | Sudaya Staff     | Barista, kasir (PWA)      | Wajib   |
+| `/pos`   | POS kasir        | Barista, kasir, manager   | Wajib   |
 | `/kds`   | Barista Display  | Barista                   | Wajib   |
 | `/admin` | Sudaya Admin     | Super Admin, Owner, Admin | Wajib   |
 
@@ -152,6 +153,126 @@ Level, Extra Shot, Milk Options, Topping). Menu customer ada di
 - **Cache:** menu customer di-cache (`use cache`, profil `minutes`) dan
   langsung di-invalidate (`updateTag`) setiap kali admin mengubah katalog.
 
+## Order, pembayaran & antrean (Epic 03)
+
+Semua channel memakai satu engine di [src/lib/orders/engine.ts](src/lib/orders/engine.ts):
+POS (`/pos`), QR meja (`/order?outlet=SDY01&table=T03`), QR kasir
+(`?src=qr`), web, dan kiosk (`/kiosk?outlet=SDY01`).
+
+- **Alur:** order dibuat dengan status `pending_payment`. Kasir mengonfirmasi
+  pembayaran tunai, lalu order lunas dan masuk antrean (`queued`) dengan nomor
+  `SDY-001`. Barista di `/kds` memindahkannya ke `preparing`, `ready`, lalu
+  `completed`. Status produksi (`orders.status`) terpisah dari status
+  pembayaran (`orders.payment_status`).
+- **Harga dihitung server:** produk, ketersediaan, dan modifier divalidasi
+  ulang dari DB saat checkout. Snapshot harga disimpan ke `order_items` dan
+  `order_item_modifiers`. Semua nominal berupa integer Rupiah.
+- **Idempotency:** `orders.idempotency_key` unik per outlet. Klik ganda atau
+  retry mengembalikan order yang sama. Konfirmasi bayar mengunci baris order
+  (`FOR UPDATE`), jadi bayar dua kali tidak menghasilkan dua nomor antrean.
+- **Nomor antrean:** hanya terbit setelah bayar. Counter harian per outlet
+  (`order_number_counters`, tanggal mengikuti zona waktu outlet) memakai upsert
+  yang mengunci baris counter, sehingga transaksi bersamaan tidak bisa
+  mendapat nomor yang sama. `paid_at` diambil setelah lock, jadi urutan
+  antrean deterministik.
+- **Pembatalan:** order yang belum dibayar langsung batal (`order.void`). Order
+  yang sudah lunas hanya bisa diajukan, lalu disetujui Manager
+  (`approval.approve`, tidak boleh pemohonnya sendiri). Pembatalan tidak
+  otomatis mengembalikan uang; refund diproses terpisah.
+- **Riwayat & audit:** `order.created`, `payment.confirmed`, `order.queued`,
+  `order.preparing/ready/completed`, `order.status_override`,
+  `order.cancel_requested`, `approval.approved/rejected`, dan
+  `order.cancelled`. Riwayat ini tampil di `/admin/orders/[id]`.
+- **Akses guest:** token acak 256-bit dikirim lewat cookie httpOnly (path
+  `/order/status`), dan yang disimpan di DB hanya hash-nya. Halaman status
+  memakai `no-referrer` dan `noindex`. Nomor antrean atau id order saja tidak
+  cukup untuk membuka detail pesanan.
+- **Realtime:** `realtime.send()` dipanggil di dalam transaksi, jadi pesan
+  hanya terkirim kalau transaksi commit. Broadcast publik **tanpa payload**
+  (sinyal saja), lalu client memuat ulang data lewat jalur server yang
+  diotorisasi (`router.refresh()`). RLS tidak dibuka. Topik `outlet-orders:<id>`
+  untuk KDS dan POS, dan `order:<turunan hash token>` untuk customer. Kalau
+  Realtime tidak tersambung, otomatis beralih ke polling terbatas.
+- **Payment gateway:** abstraksi ada di
+  [src/lib/payments/provider.ts](src/lib/payments/provider.ts). Midtrans atau
+  Xendit belum dikonfigurasi, jadi QRIS tampil "belum tersedia" dan tidak ada
+  jalur yang bisa menandai order lunas tanpa konfirmasi kasir.
+- **Diskon** belum ada karena belum ada aturan maupun permission diskon (Phase 2).
+
+## Hardening checkout (Epic 04)
+
+- **Rate limit checkout guest:** checkout QR/web/kiosk lewat Route Handler
+  `POST /api/orders` (bukan Server Action) supaya bisa menjawab **HTTP 429 +
+  `Retry-After`**. Counter fixed-window disimpan di Postgres
+  (`rate_limit_counters`, key di-hash, satu upsert atomik), jadi konsisten di
+  semua instance serverless tanpa layanan tambahan. Batas per 10 menit
+  ([src/lib/orders/checkout-limits.ts](src/lib/orders/checkout-limits.ts)):
+  6 order per perangkat (cookie acak `sdy_did`), 40 untuk kiosk, 60 per IP
+  (longgar agar Wi-Fi outlet yang dipakai banyak customer tidak terblokir).
+  Retry dengan idempotency key yang sama tidak memakai kuota. Request lintas
+  origin atau bukan JSON ditolak.
+- **IP tepercaya saja:** di Vercel dipakai `x-vercel-forwarded-for` /
+  `x-real-ip` (ditimpa edge Vercel). Self-host di belakang reverse proxy: set
+  `TRUSTED_IP_HEADER` (mis. `x-real-ip`). Tanpa itu header IP kiriman client
+  diabaikan dan batas jaringan memakai cadangan per outlet (120 / 10 menit).
+- **Kedaluwarsa order belum dibayar:** `orders.expires_at = now() DB + TTL`
+  (`outlets.pending_payment_ttl_minutes`, default 15). Fungsi
+  `public.expire_pending_orders()` dijalankan **pg_cron tiap menit**: hanya
+  order `pending_payment` + payment `pending` yang lewat batas, memakai
+  `FOR UPDATE SKIP LOCKED` (pembayaran yang sedang berjalan tidak diganggu),
+  idempotent, menulis audit `order.expired` dan sinyal realtime. Order lunas
+  tidak pernah cocok dengan filter. Kasir yang mencoba membayar order lewat
+  batas ditolak dan order langsung dikedaluwarsakan. Halaman status customer
+  menampilkan batas bayar dan hitung mundur.
+
+## Inventory (Epic 04)
+
+Halaman di `/admin/inventory` (ringkasan), `items`, `movements`, `stock-in`,
+`stock-out`, `waste`, `opname`. Semua operasi ada di
+[src/lib/inventory](src/lib/inventory).
+
+- **Ledger append-only:** satu-satunya jalur yang mengubah
+  `inventory_items.stock_qty` adalah `postMovement()` di
+  [src/lib/inventory/ledger.ts](src/lib/inventory/ledger.ts): kunci baris item
+  (`FOR UPDATE`), cek idempotency key (unik per outlet), tolak saldo negatif,
+  lalu update saldo + insert ledger dalam satu transaksi. Trigger database
+  menolak UPDATE/DELETE/TRUNCATE pada `inventory_transactions`; CHECK
+  constraint menolak saldo negatif. Browser tidak pernah mengirim saldo.
+- **Koreksi hanya lewat reversal:** salah input diperbaiki dengan movement
+  `reversal` (`reverses_id`, unik → satu movement hanya bisa dibalik sekali).
+  Reversal dan koreksi manual (+/−) butuh **approval** (`stock_adjustment`):
+  pengaju `inventory.adjust`, pemutus `approval.approve` dan bukan pengaju.
+  Stok baru berubah saat disetujui.
+- **Satuan & angka eksak:** g/kg, ml/l, dan satuan hitung (pcs, botol, cup,
+  pack, sachet, box, lembar). Konversi hanya antar dimensi sama dan harus
+  tepat (BigInt, skala 3); kuantitas `numeric(14,3)`, harga pokok
+  `numeric(16,4)` per satuan dasar. Harga beli terbaru (stok masuk
+  pembelian) menjadi harga pokok item.
+- **Stok masuk** (`inventory.receive`): pembelian / retur masuk, tanggal,
+  no. referensi, batch, kedaluwarsa, catatan. **Stok keluar & waste**
+  (`inventory.issue`): pemakaian internal, stok keluar lainnya, rusak,
+  kedaluwarsa, tumpah, salah produksi, dengan foto bukti opsional di bucket
+  **privat** `inventory-evidence` (dibuka lewat signed URL 60 detik).
+- **Stock opname** (`inventory.opname`): buat sesi → saldo sistem di-snapshot
+  → input fisik → variance dihitung server → alasan wajib untuk selisih →
+  approval (`stock_opname`). Saat disetujui, **selisih** diterapkan ke saldo
+  terkini (mutasi setelah snapshot tetap dihitung), sekali saja (status +
+  idempotency key per item). Satu sesi terbuka per outlet (unique index).
+  Opname tanpa selisih selesai tanpa approval.
+- **Menu & stok:** produk jadi dihubungkan ke item (`outlet_products.inventory_item_id`,
+  satuan hitung). Stok dipotong saat order **dibayar** (movement `sale`);
+  stok kurang → pembayaran ditolak. Pembatalan order lunas yang disetujui
+  mengembalikan stok (reversal). Ketersediaan dihitung terpisah: sold out
+  manual (`is_available`, tidak pernah ditimpa stok), stok habis/item
+  nonaktif, dan ketersediaan efektif. Minuman racikan tanpa BOM tidak
+  memotong bahan baku; tabel `product_recipe_items` disiapkan untuk BOM
+  (belum dipakai). Saat stok produk jadi melewati 0, cache katalog customer
+  di-invalidate.
+- **Dashboard:** item aktif, menipis (≤ minimum), habis, nilai stok (hanya
+  item ber-harga pokok, cakupannya ditampilkan), waste bulan ini, penyesuaian,
+  opname terakhir, approval menunggu, item hampir kedaluwarsa. Tidak ada angka
+  contoh: semua dari ledger.
+
 ## Test
 
 | Script             | Isi                                                          |
@@ -178,7 +299,7 @@ bawah 22.
 | `npm run db:migrate`      | Terapkan migrasi ke database                    |
 | `npm run db:seed`         | Seed company/brand/outlet + RBAC (idempotent)   |
 | `npm run admin:bootstrap` | Siapkan Super Admin pertama                     |
-| `npm run storage:setup`   | Siapkan bucket foto menu (idempotent)           |
+| `npm run storage:setup`   | Siapkan bucket foto menu & bukti stok (idempotent) |
 | `npm run db:studio`       | Buka Drizzle Studio                             |
 
 ## Struktur
@@ -194,6 +315,9 @@ src/
     seed.ts       Seeder idempotent
   lib/auth/       RBAC katalog, policy murni, DAL session, operasi admin, bootstrap
   lib/catalog/    Menu: admin ops, storefront, harga/quote, validasi, foto
+  lib/inventory/  Stok: ledger, operasi, query, satuan, approval, opname
+  lib/orders/     Order engine, checkout limit, token guest, realtime
+  lib/security/   IP tepercaya & rate limit (Postgres)
   lib/supabase/   Supabase client: server, browser, proxy, admin (service role)
   proxy.ts        Next.js Proxy (dulu middleware): refresh session + guard area internal
 scripts/          CLI: db-seed, admin-bootstrap, storage-setup

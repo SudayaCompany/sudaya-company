@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -69,4 +70,20 @@ export const auditLogs = pgTable(
     index().on(t.entityType, t.entityId),
     index().on(t.companyId, t.createdAt),
   ],
+).enableRLS();
+
+/**
+ * Rate limit fixed-window (checkout guest). Disimpan di Postgres agar
+ * konsisten antar instance serverless. `key` = SHA-256 (bukan IP mentah);
+ * baris kedaluwarsa dibersihkan pg_cron.
+ */
+export const rateLimitCounters = pgTable(
+  "rate_limit_counters",
+  {
+    key: text().primaryKey(),
+    windowStart: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    count: integer().notNull().default(0),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index().on(t.expiresAt)],
 ).enableRLS();

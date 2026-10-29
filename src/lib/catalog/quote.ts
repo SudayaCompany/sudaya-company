@@ -26,7 +26,10 @@ export type CartQuoteLine = CartLineInput &
     | {
         ok: true;
         name: string;
-        modifiers: { name: string; priceDelta: number }[];
+        /** Harga produk per unit sebelum modifier. */
+        basePrice: number;
+        modifiers: { modifierId: string; groupName: string; name: string; priceDelta: number }[];
+        /** Harga per unit termasuk modifier. */
         unitPrice: number;
         lineTotal: number;
       }
@@ -39,6 +42,10 @@ export type CartQuote =
 
 export function quoteCart(storefront: Storefront, lines: CartLineInput[]): CartQuote {
   const products = new Map(storefront.products.map((p) => [p.id, p]));
+  // Produk jadi: total semua baris produk yang sama tidak boleh melebihi stok.
+  const demand = new Map<string, number>();
+  for (const line of lines) demand.set(line.productId, (demand.get(line.productId) ?? 0) + line.quantity);
+
   const quoted: CartQuoteLine[] = lines.map((line) => {
     const product = products.get(line.productId);
     if (!product) {
@@ -46,11 +53,21 @@ export function quoteCart(storefront: Storefront, lines: CartLineInput[]): CartQ
     }
     const priced = priceSelection(product, line.modifierIds);
     if (!priced.ok) return { ...line, ok: false, name: product.name, error: priced.error };
+    const limit = product.stockLimit;
+    if (limit !== undefined && limit !== null && (demand.get(product.id) ?? 0) > limit) {
+      return { ...line, ok: false, name: product.name, error: `Stok tersisa ${limit}. Kurangi jumlahnya.` };
+    }
     return {
       ...line,
       ok: true,
       name: product.name,
-      modifiers: priced.modifiers.map((m) => ({ name: m.name, priceDelta: m.priceDelta })),
+      basePrice: product.price,
+      modifiers: priced.modifiers.map((m) => ({
+        modifierId: m.modifierId,
+        groupName: m.groupName,
+        name: m.name,
+        priceDelta: m.priceDelta,
+      })),
       unitPrice: priced.unitPrice,
       lineTotal: priced.unitPrice * line.quantity,
     };
