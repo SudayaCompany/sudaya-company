@@ -2,6 +2,7 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { forbidden, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import { db } from "@/db";
@@ -24,6 +25,11 @@ import type { Permission } from "./rbac";
  */
 export const getSession = cache(
   async (): Promise<{ userId: string; sessionId: string } | null> => {
+    // Auth hanya boleh dievaluasi saat ada request sungguhan. Tanpa ini,
+    // prerender runtime Cache Components (cookies sudah tersedia) ikut
+    // menjalankan getClaims(), yang memanggil Date.now() untuk cek exp JWT,
+    // dan Next melaporkan "unstable value Date.now() while prerendering".
+    await connection();
     const supabase = await createClient();
     const { data, error } = await supabase.auth.getClaims();
     const claims = data?.claims;
