@@ -1,10 +1,8 @@
 import "server-only";
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import { z } from "zod";
 
-import * as schema from "./schema";
+import { createDatabase } from "./client";
 
 const databaseUrl = z
   .string({ error: "DATABASE_URL belum di-set (lihat .env.example)" })
@@ -13,14 +11,15 @@ const databaseUrl = z
 
 // Simpan koneksi di globalThis agar hot reload saat dev tidak membuka
 // koneksi baru terus-menerus.
-const globalForDb = globalThis as unknown as { pgClient?: postgres.Sql };
+const globalForDb = globalThis as unknown as {
+  sudayaDb?: ReturnType<typeof createDatabase>;
+};
 
-// prepare: false wajib untuk Supabase transaction pooler (port 6543).
-const client = globalForDb.pgClient ?? postgres(databaseUrl, { prepare: false });
-if (process.env.NODE_ENV !== "production") globalForDb.pgClient = client;
+const connection = globalForDb.sudayaDb ?? createDatabase(databaseUrl);
+if (process.env.NODE_ENV !== "production") globalForDb.sudayaDb = connection;
 
 /**
  * Akses DB lewat koneksi Postgres langsung (melewati RLS). Hanya dipakai
  * di server, dan setiap pemanggil wajib cek permission lebih dulu.
  */
-export const db = drizzle(client, { schema, casing: "snake_case" });
+export const db = connection.db;

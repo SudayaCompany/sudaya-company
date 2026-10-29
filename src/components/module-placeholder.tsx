@@ -1,8 +1,9 @@
-import Link from "next/link";
-
 import { Badge } from "@/components/ui/badge";
 
-/** Halaman sementara untuk interface yang belum dibangun. */
+/**
+ * Halaman sementara untuk interface customer yang belum dibangun.
+ * Sengaja tanpa link ke area staff/admin (kiosk & order bersifat publik).
+ */
 export function ModulePlaceholder({
   title,
   description,
@@ -14,9 +15,6 @@ export function ModulePlaceholder({
 }) {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-12">
-      <Link href="/" className="text-sm text-muted-foreground hover:underline">
-        ← Sudaya
-      </Link>
       <div className="flex flex-col gap-2">
         <Badge className="bg-brand text-brand-foreground">Segera hadir</Badge>
         <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>

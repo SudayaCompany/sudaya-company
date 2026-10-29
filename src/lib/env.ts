@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 const publicEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.url().refine((url) => new URL(url).pathname === "/", {
+    error:
+      "NEXT_PUBLIC_SUPABASE_URL harus berupa Project URL tanpa path (mis. https://xxxx.supabase.co, bukan .../rest/v1/).",
+  }),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 });
 

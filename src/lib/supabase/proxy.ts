@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getPublicEnv } from "@/lib/env";
 
 /** Area internal yang wajib login. Customer (/order, /kiosk) tetap boleh guest. */
-const PROTECTED_PREFIXES = ["/admin", "/staff", "/kds"];
+const PROTECTED_PREFIXES = ["/admin", "/staff", "/kds", "/auth/set-password"];
 
 /**
  * Me-refresh cookie session Supabase di setiap request, lalu melakukan
@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   // getClaims yang memicu refresh token.
   const { data } = await supabase.auth.getClaims();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
@@ -53,7 +53,8 @@ export async function updateSession(request: NextRequest) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = "";
-    loginUrl.searchParams.set("next", pathname);
+    // Divalidasi ulang dengan safeNextPath saat login (anti open redirect).
+    loginUrl.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);
   }
 

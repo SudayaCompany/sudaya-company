@@ -38,7 +38,7 @@ export const roles = pgTable(
     companyId: uuid()
       .notNull()
       .references(() => companies.id),
-    /** super_admin, owner, manager, admin, barista, kasir */
+    /** super_admin, owner, manager, admin, barista, cashier (lihat src/lib/auth/rbac.ts) */
     code: text().notNull(),
     name: text().notNull(),
     ...timestamps(),
