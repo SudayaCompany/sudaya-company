@@ -117,9 +117,11 @@ describe.skipIf(!hasLiveEnv)("route & session end-to-end", () => {
 
   describe("guest", () => {
     it("1. membuka /order → berhasil", async () => {
-      const res = await get("/order");
+      const res = await get(`/order?outlet=${company.outletCode}`);
       expect(res.status).toBe(200);
-      expect(res.body).toContain("Sudaya Order");
+      // Outlet test belum punya menu → empty state katalog (bukan login/403).
+      expect(res.body).toContain("Menu belum tersedia");
+      expect(res.body).not.toMatch(/href="\/(admin|staff|kds)/);
     });
 
     it("/kiosk publik dan tidak menautkan area staff/admin", async () => {

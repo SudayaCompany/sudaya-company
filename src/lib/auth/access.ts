@@ -133,6 +133,7 @@ export type AccessibleOutlet = {
   id: string;
   code: string;
   name: string;
+  brandId: string;
   brandName: string;
 };
 
@@ -152,6 +153,7 @@ export async function listAccessibleOutlets(
       id: outlets.id,
       code: outlets.code,
       name: outlets.name,
+      brandId: brands.id,
       brandName: brands.name,
     })
     .from(outlets)

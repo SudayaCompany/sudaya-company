@@ -14,7 +14,8 @@
     "db:seed": "tsx scripts/db-seed.ts",
     "admin:bootstrap": "tsx scripts/admin-bootstrap.ts",
     "test": "vitest run",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "storage:setup": "tsx scripts/storage-setup.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

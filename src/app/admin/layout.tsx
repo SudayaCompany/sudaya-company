@@ -1,7 +1,10 @@
 import {
+  CoffeeIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
   ScrollTextIcon,
+  SlidersHorizontalIcon,
+  TagsIcon,
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +21,9 @@ import { NavLinks, type NavItem } from "./nav-links";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboardIcon /> },
+  { href: "/admin/products", label: "Produk", icon: <CoffeeIcon /> },
+  { href: "/admin/categories", label: "Kategori", icon: <TagsIcon /> },
+  { href: "/admin/modifiers", label: "Modifier", icon: <SlidersHorizontalIcon /> },
   { href: "/admin/users", label: "Pengguna", icon: <UsersIcon /> },
   { href: "/admin/roles", label: "Role & Permission", icon: <KeyRoundIcon /> },
   { href: "/admin/audit", label: "Audit Log", icon: <ScrollTextIcon /> },

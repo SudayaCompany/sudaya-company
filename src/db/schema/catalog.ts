@@ -1,9 +1,13 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   pgTable,
   primaryKey,
   text,
+  timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -24,30 +28,62 @@ const brandColumns = () => ({
     .references(() => brands.id),
 });
 
-export const categories = pgTable("categories", {
-  id: id(),
-  ...brandColumns(),
-  name: text().notNull(),
-  sortOrder: integer().notNull().default(0),
-  isActive: boolean().notNull().default(true),
-  ...timestamps(),
-}).enableRLS();
+/**
+ * Soft delete: produk direferensikan order_items (tanpa cascade), jadi baris
+ * tidak pernah dihapus fisik. Slug/SKU unik hanya di antara baris aktif.
+ */
+const deletedAt = () => timestamp({ withTimezone: true });
+
+export const categories = pgTable(
+  "categories",
+  {
+    id: id(),
+    ...brandColumns(),
+    name: text().notNull(),
+    slug: text().notNull(),
+    sortOrder: integer().notNull().default(0),
+    isActive: boolean().notNull().default(true),
+    deletedAt: deletedAt(),
+    ...timestamps(),
+  },
+  (t) => [
+    uniqueIndex("categories_brand_slug_unique")
+      .on(t.brandId, t.slug)
+      .where(sql`${t.deletedAt} is null`),
+  ],
+).enableRLS();
 
 // PRD §28, §73
-export const products = pgTable("products", {
-  id: id(),
-  ...brandColumns(),
-  categoryId: uuid()
-    .notNull()
-    .references(() => categories.id),
-  name: text().notNull(),
-  description: text(),
-  imagePath: text(),
-  basePrice: money().notNull(),
-  isActive: boolean().notNull().default(true),
-  sortOrder: integer().notNull().default(0),
-  ...timestamps(),
-}).enableRLS();
+export const products = pgTable(
+  "products",
+  {
+    id: id(),
+    ...brandColumns(),
+    categoryId: uuid()
+      .notNull()
+      .references(() => categories.id),
+    name: text().notNull(),
+    slug: text().notNull(),
+    sku: text(),
+    description: text(),
+    /** Path objek di bucket Storage menu-images (bukan URL). */
+    imagePath: text(),
+    basePrice: money().notNull(),
+    isActive: boolean().notNull().default(true),
+    sortOrder: integer().notNull().default(0),
+    deletedAt: deletedAt(),
+    ...timestamps(),
+  },
+  (t) => [
+    uniqueIndex("products_brand_slug_unique")
+      .on(t.brandId, t.slug)
+      .where(sql`${t.deletedAt} is null`),
+    uniqueIndex("products_brand_sku_unique")
+      .on(t.brandId, t.sku)
+      .where(sql`${t.deletedAt} is null and ${t.sku} is not null`),
+    index().on(t.brandId, t.categoryId),
+  ],
+).enableRLS();
 
 export const outletProducts = pgTable(
   "outlet_products",

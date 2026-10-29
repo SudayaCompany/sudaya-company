@@ -16,7 +16,8 @@ export default defineConfig({
     setupFiles: ["tests/setup-env.ts"],
     // Test integrasi memakai DB bersama; jalankan file berurutan.
     fileParallelism: false,
-    testTimeout: 30_000,
-    hookTimeout: 60_000,
+    // Test live ke Supabase (region jauh) bisa lambat saat jaringan padat.
+    testTimeout: 60_000,
+    hookTimeout: 120_000,
   },
 });

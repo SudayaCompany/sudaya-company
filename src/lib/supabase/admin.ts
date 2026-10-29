@@ -7,7 +7,7 @@ import type { AuthAdmin } from "@/lib/auth/admin-ops";
 import { getPublicEnv } from "@/lib/env";
 
 /** Supabase client dengan service role — melewati RLS. Server only. */
-function createAdminClient() {
+export function createAdminClient() {
   const serviceRoleKey = z
     .string({ error: "SUPABASE_SERVICE_ROLE_KEY belum di-set" })
     .min(1)

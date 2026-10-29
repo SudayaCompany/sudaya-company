@@ -13,8 +13,11 @@ import { createDatabase } from "@/db/client";
 import {
   auditLogs,
   brands,
+  categories,
   companies,
+  modifierGroups,
   outlets,
+  products,
   roles,
   userRoles,
   users,
@@ -22,6 +25,15 @@ import {
 import { seedInitialData } from "@/db/seed";
 import { loadCurrentUser, type CurrentUser } from "@/lib/auth/access";
 import type { RoleCode } from "@/lib/auth/rbac";
+import { MENU_IMAGE_BUCKET } from "@/lib/catalog/image-url";
+
+/** PNG 1×1 yang valid, untuk test upload foto. */
+export const TINY_PNG = Uint8Array.from(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
 
 const hasCredentials = Boolean(
   process.env.DATABASE_URL &&
@@ -76,7 +88,16 @@ export function createLiveContext() {
       if (!role) throw new Error(`role ${roleCode} tidak ada`);
       return role.id;
     };
-    return { id: company.id, code, name: company.name, outletId: outlet.id, target, roleId };
+    return {
+      id: company.id,
+      code,
+      name: company.name,
+      brandId: outlet.brandId,
+      outletId: outlet.id,
+      outletCode: outlet.code,
+      target,
+      roleId,
+    };
   }
 
   /** Membuat akun Supabase Auth + user aplikasi dengan role tertentu. */
@@ -147,6 +168,22 @@ export function createLiveContext() {
         await admin.auth.admin.deleteUser(user.id);
       }
       if (companyIds.length) {
+        // Foto menu test di Storage: <companyId>/<brandId>/<file>.
+        for (const companyId of companyIds) {
+          const { data: folders } = await admin.storage.from(MENU_IMAGE_BUCKET).list(companyId);
+          for (const folder of folders ?? []) {
+            const { data: files } = await admin.storage
+              .from(MENU_IMAGE_BUCKET)
+              .list(`${companyId}/${folder.name}`);
+            const paths = (files ?? []).map((f) => `${companyId}/${folder.name}/${f.name}`);
+            if (paths.length) await admin.storage.from(MENU_IMAGE_BUCKET).remove(paths);
+          }
+        }
+        // Katalog dulu (FK ke brand/outlet); cascade ke outlet_products,
+        // product_modifier_groups, dan modifiers.
+        await db.delete(products).where(inArray(products.companyId, companyIds));
+        await db.delete(modifierGroups).where(inArray(modifierGroups.companyId, companyIds));
+        await db.delete(categories).where(inArray(categories.companyId, companyIds));
         await db.delete(users).where(inArray(users.companyId, companyIds));
         await db.delete(roles).where(inArray(roles.companyId, companyIds));
         await db.delete(outlets).where(inArray(outlets.companyId, companyIds));

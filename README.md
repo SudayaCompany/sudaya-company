@@ -30,7 +30,8 @@ Butuh Node.js 22 (lihat `.nvmrc`) dan project [Supabase](https://supabase.com).
 4. `npm run db:migrate`
 5. `npm run db:seed`: membuat Sudaya Company, Sudaya Coffee, Outlet 01, serta role dan permission
 6. `npm run admin:bootstrap`: menyiapkan Super Admin pertama (lihat [Super Admin pertama](#super-admin-pertama))
-7. `npm run dev`, lalu buka http://localhost:3000/login
+7. `npm run storage:setup`: menyiapkan bucket foto menu (lihat [Menu & foto](#menu--foto-epic-02))
+8. `npm run dev`, lalu buka http://localhost:3000/login
 
 ## Setup database
 
@@ -121,6 +122,36 @@ berikutnya ditambahkan lewat `/admin/users`. Script juga butuh Node 22 dan
 - **403:** halaman tanpa izin memanggil `forbidden()` dan menampilkan
   [src/app/forbidden.tsx](src/app/forbidden.tsx).
 
+## Menu & foto (Epic 02)
+
+Halaman admin: `/admin/products` (cari, filter, urut, paginasi, sold out per
+outlet), `/admin/products/new`, `/admin/products/[id]/edit`,
+`/admin/categories`, dan `/admin/modifiers` (preset Size, Hot/Ice, Sugar
+Level, Extra Shot, Milk Options, Topping). Menu customer ada di
+`/order?outlet=SDY01&table=T03`.
+
+- **Scope:** data master menu (nama, harga, kategori, modifier, foto) berlaku
+  untuk semua outlet satu brand, jadi butuh permission `product.*`
+  company-wide. Status sold out berlaku per outlet dan cukup memakai
+  `product.edit` di outlet tersebut (misalnya Manager outlet).
+- **Harga dihitung server:** browser hanya mengirim id produk, id modifier, dan
+  jumlah. Harga kiriman browser dibuang
+  ([src/lib/catalog/quote.ts](src/lib/catalog/quote.ts)).
+- **Soft delete:** produk dan kategori tidak dihapus fisik karena dirujuk
+  histori order. Slug dan SKU hanya wajib unik di antara data yang belum dihapus.
+- **Audit:** `product.created/updated/price_changed/image_changed/deleted/availability_changed`,
+  `category.*`, dan `modifier_group.*`.
+- **Foto menu:** disimpan di bucket Supabase Storage `menu-images` yang
+  **publik untuk dibaca** agar customer guest bisa melihatnya. Upload dan
+  hapus hanya lewat Server Action dengan service role. Tidak ada policy
+  anon/authenticated, jadi browser tidak bisa menulis langsung. Format yang
+  diterima JPG, PNG, atau WebP (dicek dari isi file), maksimal 2 MB.
+  `npm run storage:setup` membuat atau menyelaraskan bucket ini, dan gagal
+  kalau menemukan bucket publik lain. Bucket absensi atau biometrik nanti wajib
+  private.
+- **Cache:** menu customer di-cache (`use cache`, profil `minutes`) dan
+  langsung di-invalidate (`updateTag`) setiap kali admin mengubah katalog.
+
 ## Test
 
 | Script             | Isi                                                          |
@@ -147,6 +178,7 @@ bawah 22.
 | `npm run db:migrate`      | Terapkan migrasi ke database                    |
 | `npm run db:seed`         | Seed company/brand/outlet + RBAC (idempotent)   |
 | `npm run admin:bootstrap` | Siapkan Super Admin pertama                     |
+| `npm run storage:setup`   | Siapkan bucket foto menu (idempotent)           |
 | `npm run db:studio`       | Buka Drizzle Studio                             |
 
 ## Struktur
@@ -161,9 +193,10 @@ src/
     index.ts      Drizzle client app (server-only)
     seed.ts       Seeder idempotent
   lib/auth/       RBAC katalog, policy murni, DAL session, operasi admin, bootstrap
+  lib/catalog/    Menu: admin ops, storefront, harga/quote, validasi, foto
   lib/supabase/   Supabase client: server, browser, proxy, admin (service role)
   proxy.ts        Next.js Proxy (dulu middleware): refresh session + guard area internal
-scripts/          CLI: db-seed, admin-bootstrap
+scripts/          CLI: db-seed, admin-bootstrap, storage-setup
 tests/            unit, integration (DB live), e2e (HTTP)
 drizzle/          File migrasi SQL hasil generate
 ```

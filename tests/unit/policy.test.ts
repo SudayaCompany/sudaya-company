@@ -144,6 +144,16 @@ describe("routing berdasarkan akses", () => {
     expect(canAccessPath(owner, "/admin/roles")).toBe(false);
   });
 
+  it("halaman katalog admin butuh product.view", () => {
+    const manager = subject(grant("manager", OUTLET_A));
+    for (const path of ["/admin/products", "/admin/products/new", "/admin/categories", "/admin/modifiers"]) {
+      expect(canAccessPath(barista, path), path).toBe(false);
+      expect(canAccessPath(cashier, path), path).toBe(false);
+      expect(canAccessPath(manager, path), path).toBe(true);
+      expect(canAccessPath(owner, path), path).toBe(true);
+    }
+  });
+
   it("postLoginPath memakai next hanya jika aman & diizinkan", () => {
     expect(postLoginPath(superAdmin, "/admin/users")).toBe("/admin/users");
     expect(postLoginPath(barista, "/admin")).toBe("/staff");
