@@ -1,0 +1,2737 @@
+# PRODUCT REQUIREMENTS DOCUMENT (PRD)
+## SUDAYA COMPANY
+
+**Versi:** 1.0  
+**Status:** Draft Produk  
+**Product Owner:** Pilar Ekonomi  
+**Brand Awal:** Sudaya Coffee  
+**Cakupan Awal:** 1 Outlet  
+**Platform:** Web Admin, Mobile Staff, Web/PWA Customer, Tablet/Kiosk  
+**Target:** MVP → Pengembangan Bertahap
+
+---
+
+# 1. EXECUTIVE SUMMARY
+
+Sudaya Company adalah platform terintegrasi untuk mengelola operasional bisnis Sudaya Coffee mulai dari:
+
+1. Absensi dan kedisiplinan karyawan.
+2. Pengelolaan stok.
+3. Point of Sales/POS.
+4. Self-service ordering.
+5. Antrean produksi barista.
+6. Pembayaran.
+7. Customer Relationship Management.
+8. Loyalty.
+9. Laporan penjualan.
+10. Monitoring operasional.
+11. Keuangan operasional.
+12. Audit trail.
+13. Approval transaksi tertentu.
+
+Sistem dibuat untuk digunakan oleh internal Sudaya Coffee sekaligus pelanggan.
+
+Satu transaksi yang masuk dari kasir, barista, QR pelanggan, website, atau kiosk akan masuk ke **satu antrean order yang sama** berdasarkan waktu transaksi.
+
+Prinsip utama sistem:
+
+> **Satu Sistem — Satu Data — Satu Antrean — Satu Kontrol Operasional.**
+
+---
+
+# 2. LATAR BELAKANG
+
+Operasional coffee shop memiliki beberapa aktivitas yang saling berkaitan:
+
+- kehadiran barista,
+- ketersediaan bahan,
+- pemesanan,
+- pembayaran,
+- produksi minuman,
+- stok,
+- pelanggan,
+- sampai laporan keuangan.
+
+Jika setiap aktivitas berjalan menggunakan sistem berbeda atau pencatatan manual, muncul risiko:
+
+- transaksi tidak tercatat,
+- stok tidak diketahui secara real time,
+- kesalahan antrean,
+- manipulasi absensi,
+- perbedaan kas dengan transaksi,
+- kesulitan mengetahui produk terlaris,
+- tidak tersedianya database pelanggan,
+- sulit mengukur produktivitas outlet.
+
+Sudaya Company dibangun sebagai **operational management platform** untuk menyatukan seluruh proses tersebut.
+
+---
+
+# 3. PRODUCT VISION
+
+## 3.1 Vision
+
+Menjadi sistem digital terpadu yang membuat operasional Sudaya Coffee:
+
+**lebih cepat, terukur, transparan, terkendali, dan scalable.**
+
+## 3.2 Business Goals
+
+Sistem diarahkan untuk mencapai seluruh tujuan berikut:
+
+- mengurangi kebocoran transaksi;
+- meningkatkan akurasi stok;
+- meningkatkan disiplin barista;
+- mempercepat pelayanan;
+- mengurangi antrean;
+- meningkatkan penjualan;
+- membangun database pelanggan;
+- meningkatkan repeat order;
+- memperbaiki kontrol keuangan;
+- menyediakan data untuk pengambilan keputusan;
+- memungkinkan ekspansi outlet di masa depan.
+
+---
+
+# 4. SUCCESS METRICS
+
+Keberhasilan aplikasi diukur minimal melalui:
+
+| KPI | Target Awal |
+|---|---:|
+| Transaksi tercatat melalui sistem | ≥ 98% |
+| Akurasi stok | ≥ 95% |
+| Order masuk ke antrean digital | 100% |
+| Kehadiran tercatat digital | 100% |
+| Selisih kas harian | < 1% |
+| Order tanpa nomor antrean | 0 |
+| Produk habis masih dapat dipesan | 0 |
+| Waktu pencarian laporan | < 10 detik |
+| Customer order tanpa bantuan barista | meningkat |
+| Database pelanggan | bertumbuh setiap bulan |
+
+---
+
+# 5. USER ROLE
+
+Aplikasi menggunakan satu ekosistem, tetapi hak akses dibatasi berdasarkan role.
+
+## 5.1 Super Admin
+
+Pemilik hak akses tertinggi.
+
+PIC awal:
+
+**Pilar Ekonomi**
+
+Hak akses:
+
+- seluruh outlet;
+- seluruh transaksi;
+- seluruh laporan;
+- user management;
+- menu;
+- harga;
+- promo;
+- stok;
+- supplier;
+- approval;
+- konfigurasi outlet;
+- konfigurasi absensi;
+- audit trail;
+- konfigurasi payment;
+- loyalty;
+- CRM.
+
+---
+
+## 5.2 Owner/Manager
+
+Memiliki akses terhadap operasional dan laporan bisnis.
+
+Dapat:
+
+- melihat dashboard;
+- melihat penjualan;
+- melihat stok;
+- melakukan approval;
+- mengelola karyawan;
+- mengelola menu;
+- mengelola promosi;
+- melihat laporan keuangan;
+- melihat absensi.
+
+---
+
+## 5.3 Admin
+
+Mengelola data operasional seperti:
+
+- stok;
+- supplier;
+- purchasing;
+- stock opname;
+- menu;
+- customer;
+- laporan tertentu.
+
+---
+
+## 5.4 Barista/Kasir
+
+Menggunakan aplikasi untuk:
+
+- absensi;
+- menerima order;
+- membuat order;
+- menginput order manual;
+- menerima pembayaran;
+- melihat antrean;
+- mengubah status produksi;
+- melakukan opening dan closing shift;
+- mengajukan void/refund;
+- melihat stok yang diizinkan.
+
+---
+
+## 5.5 Customer
+
+Tidak wajib login.
+
+Customer dapat:
+
+- scan QR;
+- melihat menu;
+- memilih produk;
+- melakukan customization;
+- membuat order;
+- memilih tipe order;
+- membayar;
+- melihat status pesanan;
+- mendapatkan loyalty jika login.
+
+---
+
+# 6. PLATFORM
+
+Sudaya Company memiliki empat interface utama.
+
+## A. Sudaya Admin
+
+Platform:
+
+**Web Desktop Responsive**
+
+Digunakan oleh:
+
+- Super Admin;
+- Owner;
+- Manager;
+- Admin.
+
+---
+
+## B. Sudaya Staff
+
+Platform:
+
+**Android/iOS**
+
+Digunakan oleh:
+
+- Barista;
+- Kasir;
+- Manager.
+
+---
+
+## C. Sudaya Order
+
+Platform:
+
+**Web/PWA**
+
+Pelanggan tidak perlu menginstal aplikasi.
+
+Akses melalui:
+
+- QR meja;
+- QR kasir;
+- link;
+- sosial media;
+- website.
+
+---
+
+## D. Sudaya Kiosk
+
+Mode tablet untuk pemesanan mandiri di outlet.
+
+---
+
+# 7. MODULE UTAMA
+
+Sistem memiliki modul:
+
+1. Authentication
+2. Employee Management
+3. Attendance
+4. Outlet
+5. Product/Menu
+6. Inventory
+7. Supplier
+8. Purchasing
+9. POS
+10. Self Service Order
+11. Kitchen/Barista Display
+12. Payment
+13. Customer
+14. Loyalty
+15. Promotion
+16. Finance
+17. Payroll Data
+18. Reporting
+19. Approval
+20. Audit Trail
+
+---
+
+# 8. FITUR 1 — ABSENSI BARISTA
+
+## 8.1 Tujuan
+
+Memastikan kehadiran staf tercatat berdasarkan:
+
+- identitas wajah;
+- lokasi outlet;
+- waktu;
+- perangkat.
+
+---
+
+# 9. ABSENSI MASUK
+
+Flow:
+
+**Login → Attendance → Kamera → Face Detection → Face Recognition → GPS → Geofence → Check In**
+
+Data yang disimpan:
+
+- employee ID;
+- nama;
+- tanggal;
+- jam;
+- latitude;
+- longitude;
+- accuracy GPS;
+- foto;
+- similarity score;
+- device;
+- IP;
+- status.
+
+---
+
+# 10. ABSENSI PULANG
+
+Flow:
+
+**Attendance → Kamera → Face Recognition → GPS → Check Out**
+
+Sistem menghitung:
+
+**Jam kerja = Check Out − Check In**
+
+---
+
+# 11. FACE RECOGNITION
+
+Saat registrasi karyawan dilakukan enrollment wajah.
+
+Minimal dianjurkan:
+
+- foto depan;
+- sedikit kiri;
+- sedikit kanan.
+
+Data tidak sebaiknya hanya menyimpan foto mentah.
+
+Sistem dapat menyimpan:
+
+**face embedding/template terenkripsi.**
+
+---
+
+# 12. LIVENESS DETECTION
+
+Untuk mencegah penggunaan foto.
+
+Contoh validasi:
+
+- kedipan;
+- perubahan posisi kepala;
+- depth;
+- texture detection.
+
+Jika gagal:
+
+> Wajah tidak dapat diverifikasi.
+
+---
+
+# 13. GEOFENCING
+
+Default radius:
+
+**5 meter dari koordinat outlet.**
+
+Kondisi:
+
+```text
+distance(employee_location, outlet_location) <= allowed_radius
+```
+
+maka absensi diperbolehkan.
+
+Namun konfigurasi radius disimpan sebagai parameter:
+
+`attendance_radius_meter`
+
+Default:
+
+`5`
+
+Sehingga dapat diubah jika akurasi GPS bermasalah.
+
+---
+
+# 14. ANTI FRAUD ATTENDANCE
+
+Sistem mencatat:
+
+- GPS;
+- GPS accuracy;
+- timestamp server;
+- device;
+- face score;
+- IP;
+- foto absensi.
+
+Tidak menggunakan waktu dari perangkat sebagai sumber utama.
+
+Waktu absensi menggunakan:
+
+**Server Time.**
+
+---
+
+# 15. TUGAS DI LUAR OUTLET
+
+Jika pegawai mempunyai tugas luar:
+
+**Attendance → Request Outside Duty**
+
+Form:
+
+- tanggal;
+- lokasi tugas;
+- tujuan;
+- keterangan;
+- bukti;
+- approver.
+
+Status:
+
+- Pending
+- Approved
+- Rejected
+
+Setelah approved, geofence outlet tidak diberlakukan untuk tugas tersebut.
+
+Face recognition tetap dapat diwajibkan.
+
+---
+
+# 16. KONEKSI INTERNET
+
+Absensi:
+
+**WAJIB ONLINE.**
+
+Jika internet tidak tersedia:
+
+> Absensi tidak dapat dilakukan.
+
+Tidak terdapat offline attendance.
+
+---
+
+# 17. ATTENDANCE DASHBOARD
+
+Dashboard menampilkan:
+
+- hadir hari ini;
+- belum hadir;
+- jam masuk;
+- jam pulang;
+- total jam kerja;
+- keterlambatan;
+- tugas luar;
+- attendance history.
+
+---
+
+# 18. FITUR 2 — INVENTORY/STOCK
+
+Inventory mencakup:
+
+### Bahan baku
+
+Contoh:
+
+- coffee bean;
+- susu;
+- gula;
+- syrup;
+- matcha;
+- taro;
+- chocolate;
+- cup;
+- sedotan;
+- tissue.
+
+### Produk jadi
+
+Contoh:
+
+- bottled coffee;
+- snack;
+- merchandise.
+
+---
+
+# 19. INVENTORY MASTER
+
+Setiap item mempunyai:
+
+- SKU;
+- nama;
+- kategori;
+- unit;
+- stok;
+- minimum stock;
+- purchase price;
+- supplier;
+- outlet;
+- batch;
+- expiry date jika ada.
+
+---
+
+# 20. STOCK STATUS
+
+Status:
+
+### In Stock
+Stok tersedia.
+
+### Low Stock
+Stok <= minimum.
+
+### Out of Stock
+Stok = 0.
+
+---
+
+# 21. MENU AVAILABILITY
+
+Menu hanya dapat dipesan jika stok yang dibutuhkan tersedia.
+
+Jika tidak tersedia:
+
+> SOLD OUT
+
+Customer tidak dapat checkout produk tersebut.
+
+---
+
+# 22. INVENTORY MOVEMENT
+
+Jenis:
+
+### Stock In
+
+- pembelian;
+- retur;
+- adjustment positif.
+
+### Stock Out
+
+- penjualan;
+- waste;
+- expired;
+- rusak;
+- internal use;
+- adjustment negatif.
+
+---
+
+# 23. STOCK OPNAME
+
+Flow:
+
+**Stock Opname → pilih item → system qty → actual qty → variance → reason → approval**
+
+Contoh:
+
+System:
+
+20 botol
+
+Actual:
+
+18 botol
+
+Variance:
+
+-2
+
+Wajib memberikan alasan.
+
+---
+
+# 24. WASTE MANAGEMENT
+
+Barista/Admin dapat mencatat:
+
+- item;
+- quantity;
+- reason;
+- foto optional.
+
+Reason:
+
+- rusak;
+- expired;
+- salah produksi;
+- tumpah;
+- lainnya.
+
+---
+
+# 25. LOW STOCK ALERT
+
+Dashboard memberikan:
+
+🟢 Aman
+
+🟡 Menipis
+
+🔴 Habis
+
+---
+
+# 26. SUPPLIER
+
+Master supplier:
+
+- nama;
+- kontak;
+- produk;
+- harga;
+- payment term;
+- histori pembelian.
+
+---
+
+# 27. PURCHASING
+
+Flow:
+
+**Purchase Request → Approval → Purchase → Receive Goods → Stock Update**
+
+---
+
+# 28. FITUR 3 — MENU MANAGEMENT
+
+Data menu:
+
+- nama;
+- kategori;
+- deskripsi;
+- foto;
+- harga;
+- status;
+- outlet.
+
+Contoh kategori:
+
+- Coffee
+- Non Coffee
+- Tea
+- Food
+- Snack
+
+---
+
+# 29. PRODUCT VARIANT
+
+Menu dapat mempunyai:
+
+### Size
+
+- Regular
+- Large
+
+### Temperature
+
+- Ice
+- Hot
+
+### Sugar
+
+- Normal
+- Less
+- No Sugar
+
+### Coffee
+
+- Extra Shot
+- Decaf jika tersedia
+
+### Milk
+
+- Fresh Milk
+- Oat
+- lainnya
+
+### Topping
+
+- Cream
+- syrup;
+- lainnya.
+
+---
+
+# 30. ADD-ON
+
+Contoh:
+
+Extra Shot + Rp5.000
+
+Hazelnut Syrup + Rp3.000
+
+---
+
+# 31. FITUR 4 — SELF SERVICE ORDER
+
+Customer dapat memesan melalui:
+
+### QR Table
+
+Customer scan QR.
+
+### QR Counter
+
+Customer scan QR counter.
+
+### Website
+
+Customer membuka:
+
+Sudaya Order.
+
+### Kiosk
+
+Tablet di outlet.
+
+---
+
+# 32. CUSTOMER LOGIN
+
+Login:
+
+**OPTIONAL**
+
+Guest diperbolehkan.
+
+---
+
+# 33. CUSTOMER ORDER FLOW
+
+```text
+QR / Website
+↓
+Menu
+↓
+Product
+↓
+Variant
+↓
+Add On
+↓
+Cart
+↓
+Order Type
+↓
+Customer Data
+↓
+Payment
+↓
+Order Number
+↓
+Barista Queue
+↓
+Preparing
+↓
+Ready
+↓
+Completed
+```
+
+---
+
+# 34. ORDER TYPE
+
+Pilihan:
+
+### Dine In
+
+Input:
+
+- nomor meja;
+- lokasi/keterangan manual.
+
+### Takeaway
+
+Input:
+
+- nama customer.
+
+### Delivery
+
+Alamat diketik manual.
+
+Input:
+
+- nama;
+- nomor telepon;
+- alamat;
+- catatan.
+
+---
+
+# 35. POS BARISTA
+
+Barista juga dapat menginput pesanan pelanggan.
+
+Flow:
+
+**POS → Menu → Cart → Payment → Order**
+
+Setelah pembayaran:
+
+Order masuk antrean yang sama.
+
+---
+
+# 36. UNIFIED ORDER QUEUE
+
+Order dari:
+
+- customer QR;
+- website;
+- kiosk;
+- barista;
+- kasir;
+
+masuk ke:
+
+**SATU ORDER QUEUE.**
+
+Urutan berdasarkan:
+
+`paid_at`
+
+Jika belum bayar:
+
+belum masuk antrean produksi kecuali transaksi cash yang sudah dikonfirmasi kasir.
+
+---
+
+# 37. ORDER NUMBER
+
+Format contoh:
+
+**SDY-001**
+
+Kemudian:
+
+SDY-002  
+SDY-003  
+SDY-004
+
+Reset dapat dilakukan setiap hari.
+
+---
+
+# 38. KITCHEN/BARISTA DISPLAY SYSTEM
+
+Display mempunyai kolom:
+
+### NEW
+
+Pesanan baru.
+
+### PREPARING
+
+Sedang dibuat.
+
+### READY
+
+Sudah selesai.
+
+### COMPLETED
+
+Sudah diambil.
+
+---
+
+# 39. ORDER CARD
+
+Menampilkan:
+
+**SDY-027**
+
+Customer:
+
+Andi
+
+Order:
+
+- 1 Iced Latte
+- Less Sugar
+- Extra Shot
+- 1 Matcha Latte
+
+Type:
+
+Takeaway
+
+Elapsed:
+
+04:23
+
+---
+
+# 40. PRIORITAS ANTREAN
+
+Default:
+
+**FIFO — First In First Out.**
+
+Tidak boleh mengubah antrean sembarangan.
+
+Override hanya untuk user dengan permission khusus.
+
+---
+
+# 41. CUSTOMER ORDER STATUS
+
+Customer melihat:
+
+### Order Received
+
+Pesanan diterima.
+
+### Preparing
+
+Sedang dibuat.
+
+### Ready
+
+Silakan ambil pesanan.
+
+### Completed
+
+Pesanan selesai.
+
+Tidak membutuhkan WhatsApp pada MVP.
+
+---
+
+# 42. PAYMENT
+
+Metode:
+
+- Cash
+- QRIS
+- Debit
+- Credit Card
+- E-Wallet
+- Transfer
+- Payment Gateway
+
+---
+
+# 43. CASH PAYMENT
+
+Flow:
+
+Customer Order
+
+→ pilih Cash
+
+→ order muncul di kasir
+
+→ customer bayar
+
+→ kasir klik:
+
+**Confirm Payment**
+
+→ order masuk antrean.
+
+---
+
+# 44. QRIS
+
+Flow:
+
+Order
+
+→ QRIS
+
+→ Payment Gateway
+
+→ payment callback
+
+→ Paid
+
+→ Queue.
+
+Tidak mengandalkan screenshot pembayaran.
+
+---
+
+# 45. PAYMENT STATUS
+
+Status:
+
+- Pending
+- Paid
+- Failed
+- Expired
+- Refunded
+- Partial Refund
+
+---
+
+# 46. POS FUNCTIONS
+
+POS mempunyai:
+
+- product search;
+- category;
+- cart;
+- discount;
+- promo;
+- customer;
+- payment;
+- hold order;
+- open bill;
+- void;
+- refund;
+- split payment;
+- print receipt.
+
+---
+
+# 47. SPLIT PAYMENT
+
+Contoh:
+
+Total:
+
+Rp100.000
+
+Cash:
+
+Rp40.000
+
+QRIS:
+
+Rp60.000
+
+---
+
+# 48. VOID
+
+Void memerlukan alasan.
+
+Contoh:
+
+- salah input;
+- customer cancel;
+- duplicate order.
+
+Void tertentu membutuhkan approval Manager.
+
+---
+
+# 49. REFUND
+
+Refund flow:
+
+**Request → Reason → Approval → Refund**
+
+Audit trail wajib.
+
+---
+
+# 50. PROMOTION ENGINE
+
+Jenis promo:
+
+### Percentage
+
+20% discount.
+
+### Fixed Amount
+
+Rp10.000.
+
+### Buy One Get One
+
+Beli 1 gratis 1.
+
+### Bundle
+
+Coffee + Food.
+
+### Happy Hour
+
+Jam tertentu.
+
+### Voucher
+
+Kode promo.
+
+---
+
+# 51. CRM CUSTOMER
+
+Data customer:
+
+- customer ID;
+- nama;
+- phone;
+- email;
+- birthday optional;
+- total transaction;
+- total spending;
+- last transaction;
+- loyalty point.
+
+---
+
+# 52. CUSTOMER HISTORY
+
+Menampilkan:
+
+- transaksi;
+- menu favorit;
+- frekuensi;
+- average order;
+- total spending.
+
+---
+
+# 53. LOYALTY
+
+Sistem mendukung:
+
+### Points
+
+Contoh:
+
+Rp10.000 = 1 point.
+
+### Stamp
+
+Beli 10 kopi → 1 gratis.
+
+### Tier
+
+- Member
+- Silver
+- Gold
+
+Konfigurasi dapat diatur admin.
+
+---
+
+# 54. LOYALTY RULE
+
+Point baru diberikan ketika:
+
+`payment_status = paid`
+
+Jika refund:
+
+point dikurangi.
+
+---
+
+# 55. CUSTOMER DATABASE
+
+Tujuan:
+
+- repeat order;
+- customer retention;
+- campaign;
+- customer segmentation;
+- loyalty.
+
+---
+
+# 56. CASH MANAGEMENT
+
+## Opening Cash
+
+Kasir memasukkan:
+
+modal awal kas.
+
+Contoh:
+
+Rp500.000.
+
+---
+
+# 57. CLOSING CASH
+
+Di akhir operasional:
+
+System Cash:
+
+Rp3.750.000
+
+Actual Cash:
+
+Rp3.700.000
+
+Difference:
+
+-Rp50.000
+
+Kasir harus memberikan alasan.
+
+---
+
+# 58. CASH RECONCILIATION
+
+Dashboard menampilkan:
+
+- opening;
+- cash sales;
+- cash expense;
+- expected cash;
+- actual;
+- variance.
+
+---
+
+# 59. EXPENSE
+
+Pengeluaran sederhana dapat dicatat.
+
+Contoh:
+
+- parkir;
+- transport;
+- pembelian kecil;
+- maintenance.
+
+Data:
+
+- kategori;
+- nominal;
+- bukti;
+- user;
+- approval.
+
+---
+
+# 60. PAYROLL DATA
+
+Pada MVP belum perlu payroll engine penuh.
+
+Sistem menyediakan data:
+
+- hari hadir;
+- jam kerja;
+- jam masuk;
+- jam pulang;
+- keterlambatan;
+- tugas luar.
+
+Data dapat diekspor untuk payroll.
+
+---
+
+# 61. DASHBOARD OWNER
+
+Halaman utama menampilkan:
+
+### Today Sales
+
+Rp4.850.000
+
+### Transactions
+
+125
+
+### Average Order Value
+
+Rp38.800
+
+### Customers
+
+98
+
+### Items Sold
+
+175
+
+### Cash Difference
+
+Rp0
+
+---
+
+# 62. SALES CHART
+
+Filter:
+
+- today;
+- yesterday;
+- week;
+- month;
+- custom.
+
+---
+
+# 63. BEST SELLER
+
+Contoh:
+
+1. Sudaya Coffee
+2. Caramel Macchiato
+3. Matcha Latte
+4. Cappuccino
+5. Thai Tea.
+
+---
+
+# 64. SALES BY CATEGORY
+
+Contoh:
+
+Coffee 55%
+
+Non Coffee 25%
+
+Food 15%
+
+Others 5%.
+
+---
+
+# 65. SALES BY HOUR
+
+Contoh:
+
+07:00–09:00  
+12:00–14:00  
+17:00–20:00
+
+Digunakan mengetahui:
+
+**Peak Hour.**
+
+---
+
+# 66. PAYMENT ANALYTICS
+
+Contoh:
+
+QRIS 55%
+
+Cash 25%
+
+E-Wallet 15%
+
+Card 5%.
+
+---
+
+# 67. INVENTORY DASHBOARD
+
+Menampilkan:
+
+- stock value;
+- low stock;
+- out of stock;
+- waste;
+- stock adjustment.
+
+---
+
+# 68. EMPLOYEE DASHBOARD
+
+Menampilkan:
+
+- attendance;
+- working hours;
+- outside duty;
+- attendance anomaly.
+
+---
+
+# 69. APPROVAL SYSTEM
+
+Approval diperlukan untuk aktivitas tertentu.
+
+Contoh:
+
+### Void Transaction
+
+Barista → Manager.
+
+### Refund
+
+Kasir → Manager.
+
+### Stock Adjustment
+
+Admin → Manager.
+
+### Expense
+
+Barista → Manager.
+
+### Outside Duty
+
+Employee → Manager.
+
+---
+
+# 70. APPROVAL STATUS
+
+- Pending
+- Approved
+- Rejected
+- Cancelled
+
+---
+
+# 71. AUDIT TRAIL
+
+Setiap aktivitas kritis harus dicatat.
+
+Contoh:
+
+> 22 Oct 2026 10:45  
+> User: Budi  
+> Action: Stock Adjustment  
+> Product: Fresh Milk  
+> Before: 15  
+> After: 12  
+> Reason: Waste
+
+---
+
+# 72. AUDIT EVENTS
+
+Minimal mencatat:
+
+- login;
+- absensi;
+- perubahan harga;
+- stock adjustment;
+- void;
+- refund;
+- promo;
+- discount;
+- approval;
+- user modification.
+
+---
+
+# 73. PRODUCT AVAILABILITY
+
+Product mempunyai:
+
+`is_active`
+
+dan:
+
+`is_available`
+
+Admin dapat melakukan:
+
+**Manual Sold Out.**
+
+Jika stock tidak tersedia:
+
+sistem otomatis:
+
+**Sold Out.**
+
+---
+
+# 74. OUTLET MANAGEMENT
+
+Walaupun awalnya satu outlet, struktur database harus mendukung multi-outlet.
+
+Master outlet:
+
+- outlet ID;
+- name;
+- address;
+- latitude;
+- longitude;
+- attendance radius;
+- contact;
+- operating hours.
+
+---
+
+# 75. FUTURE MULTI OUTLET
+
+Nantinya sistem dapat mendukung:
+
+- harga berbeda;
+- stok berbeda;
+- karyawan berbeda;
+- promo berbeda;
+- laporan berbeda.
+
+Tanpa perlu mengubah struktur inti aplikasi.
+
+---
+
+# 76. BRAND MANAGEMENT
+
+Walaupun brand awal:
+
+**Sudaya Coffee**
+
+arsitektur disiapkan untuk:
+
+**Sudaya Company.**
+
+Entity:
+
+```text
+Company
+↓
+Brand
+↓
+Outlet
+```
+
+Contoh masa depan:
+
+Sudaya Company
+
+→ Sudaya Coffee  
+→ Brand B  
+→ Brand C
+
+---
+
+# 77. INTEGRASI
+
+Arsitektur harus memungkinkan integrasi:
+
+- QRIS;
+- Payment Gateway;
+- WhatsApp;
+- Google Maps;
+- thermal printer;
+- accounting;
+- GoFood;
+- GrabFood;
+- ShopeeFood;
+- HRIS.
+
+Tidak seluruh integrasi harus ada di MVP.
+
+---
+
+# 78. DATA MODEL UTAMA
+
+Entity minimum:
+
+```text
+companies
+brands
+outlets
+
+users
+roles
+permissions
+employees
+
+attendance
+outside_duty_requests
+
+categories
+products
+product_variants
+addons
+
+inventory_items
+inventory_transactions
+stock_opname
+suppliers
+purchases
+
+orders
+order_items
+order_item_modifiers
+
+payments
+refunds
+
+customers
+loyalty_accounts
+loyalty_transactions
+
+promotions
+vouchers
+
+cash_sessions
+expenses
+
+approvals
+audit_logs
+```
+
+---
+
+# 79. RELASI DATA SEDERHANA
+
+```text
+Company
+  ↓
+Brand
+  ↓
+Outlet
+  ↓
+Employees
+  ↓
+Orders
+  ↓
+Order Items
+  ↓
+Products
+```
+
+Inventory:
+
+```text
+Outlet
+ ↓
+Inventory
+ ↓
+Stock Movement
+```
+
+Customer:
+
+```text
+Customer
+ ↓
+Orders
+ ↓
+Loyalty
+```
+
+---
+
+# 80. PERMISSION SYSTEM
+
+Menggunakan:
+
+**RBAC — Role Based Access Control**
+
+Contoh permission:
+
+```text
+product.view
+product.create
+product.edit
+product.delete
+
+order.create
+order.void
+order.refund
+
+stock.view
+stock.adjust
+
+report.sales
+
+attendance.checkin
+
+approval.approve
+```
+
+---
+
+# 81. SECURITY
+
+Minimum security:
+
+- HTTPS;
+- JWT/session secure;
+- hashed password;
+- role permission;
+- API authentication;
+- rate limiting;
+- audit logs;
+- encryption sensitive data.
+
+---
+
+# 82. FACE DATA SECURITY
+
+Biometric data termasuk data sensitif.
+
+Sistem harus menggunakan:
+
+- encryption at rest;
+- encryption in transit;
+- limited access;
+- biometric template;
+- retention policy;
+- consent.
+
+Admin biasa tidak boleh mengunduh database biometrik.
+
+---
+
+# 83. PRIVACY
+
+Customer harus mengetahui ketika data mereka disimpan.
+
+Minimum:
+
+- Privacy Policy;
+- Terms;
+- Consent;
+- Account deletion mechanism.
+
+---
+
+# 84. NON-FUNCTIONAL REQUIREMENTS
+
+## Performance
+
+API umum:
+
+< 2 detik.
+
+Menu page:
+
+< 3 detik.
+
+POS:
+
+responsif tanpa reload halaman.
+
+---
+
+## Availability
+
+Target awal:
+
+≥ 99%.
+
+---
+
+## Scalability
+
+Sistem dapat berkembang dari:
+
+1 outlet
+
+menjadi:
+
+10, 50, hingga banyak outlet.
+
+---
+
+# 85. ONLINE ONLY
+
+Sesuai keputusan produk:
+
+Sudaya Company membutuhkan internet.
+
+Tidak terdapat:
+
+**Offline POS Mode** pada MVP.
+
+Jika internet putus:
+
+order online dan POS digital tidak dapat diproses sampai koneksi kembali.
+
+---
+
+# 86. UI DESIGN
+
+Branding:
+
+### Primary
+
+Hitam.
+
+### Background
+
+Putih.
+
+### Accent
+
+Orange Sudaya.
+
+### Secondary
+
+Hijau.
+
+Style:
+
+- clean;
+- modern;
+- premium;
+- minimal;
+- coffee lifestyle.
+
+---
+
+# 87. MOBILE STAFF NAVIGATION
+
+Bottom navigation:
+
+**Home | Order | Attendance | Stock | Profile**
+
+---
+
+# 88. CUSTOMER NAVIGATION
+
+Bottom navigation:
+
+**Home | Menu | Order | Rewards | Account**
+
+Jika guest:
+
+Rewards meminta login.
+
+---
+
+# 89. ADMIN SIDEBAR
+
+Menu:
+
+```text
+Dashboard
+
+Sales
+ ├ Orders
+ ├ POS
+ └ Payment
+
+Products
+ ├ Menu
+ ├ Categories
+ └ Add-ons
+
+Inventory
+ ├ Stock
+ ├ Stock Movement
+ ├ Stock Opname
+ ├ Purchase
+ └ Supplier
+
+Customers
+ ├ Customers
+ ├ Loyalty
+ └ Promotions
+
+Employees
+ ├ Employees
+ ├ Attendance
+ └ Outside Duty
+
+Finance
+ ├ Cash
+ ├ Expenses
+ └ Reconciliation
+
+Reports
+
+Approvals
+
+Audit Logs
+
+Settings
+```
+
+---
+
+# 90. MVP
+
+## MVP — PHASE 1
+
+Prioritas utama.
+
+### A. Authentication
+
+- login;
+- roles;
+- permissions.
+
+### B. Employee
+
+- employee profile.
+
+### C. Attendance
+
+- face registration;
+- face recognition;
+- GPS;
+- 5 meter geofence;
+- check-in;
+- check-out;
+- outside duty request.
+
+### D. Product
+
+- menu;
+- category;
+- variants;
+- addons;
+- pricing.
+
+### E. Inventory
+
+- stock;
+- stock in;
+- stock out;
+- stock opname;
+- low stock;
+- sold out.
+
+### F. POS
+
+- order;
+- payment;
+- cash;
+- QRIS;
+- receipt.
+
+### G. Self Service
+
+- QR;
+- menu;
+- cart;
+- checkout;
+- payment;
+- order status.
+
+### H. Barista Display
+
+- New;
+- Preparing;
+- Ready;
+- Completed.
+
+### I. Dashboard
+
+- sales;
+- transaction;
+- products;
+- stock;
+- attendance.
+
+---
+
+# 91. PHASE 2
+
+Tambahkan:
+
+- supplier;
+- purchase order;
+- recipe/BOM;
+- automatic ingredient deduction;
+- loyalty;
+- customer CRM;
+- promotion;
+- voucher;
+- expense;
+- cash reconciliation;
+- payroll export.
+
+---
+
+# 92. PHASE 3
+
+Tambahkan:
+
+- multi outlet;
+- transfer stock;
+- WhatsApp;
+- marketplace integration;
+- accounting integration;
+- advanced analytics;
+- forecasting;
+- demand prediction.
+
+---
+
+# 93. REKOMENDASI RECIPE/BOM
+
+Walaupun MVP dapat menggunakan stok sederhana, sistem sebaiknya nantinya mempunyai resep.
+
+Contoh:
+
+**Sudaya Coffee**
+
+```text
+Coffee Bean       18 gram
+Fresh Milk       150 ml
+Palm Sugar        20 ml
+Ice              150 gram
+Cup                1 pcs
+```
+
+Setelah order dibayar:
+
+stok dikurangi otomatis.
+
+Ini akan meningkatkan akurasi inventory secara signifikan.
+
+---
+
+# 94. USER STORY — ATTENDANCE
+
+> Sebagai barista, saya ingin melakukan absensi dengan wajah dan lokasi agar kehadiran saya tercatat secara akurat.
+
+Acceptance Criteria:
+
+- kamera terbuka;
+- wajah terdeteksi;
+- wajah sesuai;
+- GPS aktif;
+- jarak maksimal 5 meter;
+- internet tersedia;
+- waktu berasal dari server;
+- attendance berhasil disimpan.
+
+---
+
+# 95. USER STORY — SELF ORDER
+
+> Sebagai customer, saya ingin memesan melalui QR tanpa harus mengantre di kasir.
+
+Acceptance Criteria:
+
+- customer dapat membuka menu;
+- tidak wajib login;
+- dapat memilih variant;
+- dapat memasukkan order;
+- dapat memilih pembayaran;
+- mendapatkan order number;
+- dapat melihat status.
+
+---
+
+# 96. USER STORY — BARISTA POS
+
+> Sebagai barista, saya ingin memasukkan order customer sehingga order langsung masuk antrean produksi.
+
+Acceptance Criteria:
+
+- menu dapat dipilih;
+- total otomatis;
+- payment tercatat;
+- nomor order otomatis;
+- order masuk queue.
+
+---
+
+# 97. USER STORY — STOCK
+
+> Sebagai admin, saya ingin melihat stok produk agar mengetahui item yang perlu dibeli.
+
+Acceptance Criteria:
+
+- jumlah stock terlihat;
+- low stock terdeteksi;
+- out of stock terlihat;
+- history tersedia.
+
+---
+
+# 98. EDGE CASE — FACE NOT MATCH
+
+Jika:
+
+similarity < threshold
+
+tampilkan:
+
+**Wajah tidak dikenali. Silakan coba kembali.**
+
+---
+
+# 99. EDGE CASE — OUTSIDE GEOFENCE
+
+Jika:
+
+distance > 5 meter
+
+tampilkan:
+
+**Anda berada di luar area absensi Sudaya Coffee.**
+
+---
+
+# 100. EDGE CASE — PRODUCT SOLD OUT
+
+Jika stok habis setelah customer membuka cart:
+
+Saat checkout:
+
+sistem melakukan validation ulang.
+
+Jika unavailable:
+
+> Maaf, produk baru saja habis.
+
+Customer diminta menghapus item.
+
+---
+
+# 101. EDGE CASE — DUPLICATE PAYMENT CALLBACK
+
+Payment gateway callback harus:
+
+**idempotent.**
+
+Satu payment tidak boleh membuat dua order.
+
+---
+
+# 102. EDGE CASE — DUPLICATE ORDER
+
+Setiap checkout mempunyai:
+
+**idempotency key.**
+
+Mencegah double click menghasilkan dua transaksi.
+
+---
+
+# 103. RECOMMENDED SYSTEM ARCHITECTURE
+
+Contoh stack yang sederhana dan scalable:
+
+### Frontend Admin
+
+React / Next.js
+
+### Customer
+
+Next.js PWA
+
+### Mobile Employee
+
+Flutter
+
+### Backend
+
+Laravel API
+
+### Database
+
+PostgreSQL
+
+### Cache
+
+Redis
+
+### Storage
+
+S3 compatible object storage
+
+### Face Recognition
+
+Dedicated face recognition service/API.
+
+---
+
+# 104. HIGH LEVEL ARCHITECTURE
+
+```text
+               Sudaya Admin
+                    │
+               Sudaya Staff
+                    │
+Customer PWA ─── API Gateway ─── Backend
+                    │
+                 Database
+                    │
+        ┌───────────┼───────────┐
+        │           │           │
+     Payment      Face       Storage
+     Gateway    Recognition
+```
+
+---
+
+# 105. ORDER ENGINE
+
+Order service harus menjadi pusat transaksi.
+
+Semua channel:
+
+```text
+POS
+QR
+Website
+Kiosk
+```
+
+menggunakan API:
+
+```text
+POST /orders
+```
+
+Sehingga business logic tetap sama.
+
+---
+
+# 106. INVENTORY TRANSACTION PRINCIPLE
+
+Jangan hanya menyimpan:
+
+`stock = 20`
+
+Gunakan ledger.
+
+Contoh:
+
+```text
++50 purchase
+-10 sale
+-2 waste
++1 adjustment
+```
+
+Current stock:
+
+39.
+
+Dengan pendekatan ini setiap perubahan dapat diaudit.
+
+---
+
+# 107. ORDER STATUS MODEL
+
+```text
+DRAFT
+↓
+PENDING_PAYMENT
+↓
+PAID
+↓
+QUEUED
+↓
+PREPARING
+↓
+READY
+↓
+COMPLETED
+```
+
+Alternatif:
+
+```text
+CANCELLED
+REFUNDED
+```
+
+---
+
+# 108. PAYMENT STATUS
+
+Dipisahkan dari order status.
+
+Contoh:
+
+Order:
+
+`PREPARING`
+
+Payment:
+
+`PAID`
+
+Ini mencegah logika sistem tercampur.
+
+---
+
+# 109. NOTIFICATION
+
+MVP:
+
+in-app.
+
+Customer membuka halaman status order.
+
+Future:
+
+- WhatsApp;
+- push notification.
+
+---
+
+# 110. QR SYSTEM
+
+QR dapat berisi:
+
+```text
+/order?outlet=SDY01&table=T03
+```
+
+Jika QR meja:
+
+table otomatis terisi.
+
+Customer tidak perlu memasukkan ulang.
+
+---
+
+# 111. REPORTING
+
+Laporan minimal:
+
+### Sales
+
+- daily;
+- weekly;
+- monthly.
+
+### Product
+
+- bestseller;
+- product sales;
+- category.
+
+### Payment
+
+- cash;
+- QRIS;
+- card;
+- e-wallet.
+
+### Inventory
+
+- movement;
+- stock;
+- waste.
+
+### Employee
+
+- attendance;
+- hours.
+
+### Customer
+
+- new;
+- repeat;
+- spending.
+
+---
+
+# 112. EXPORT
+
+Semua laporan utama dapat diekspor menjadi:
+
+- Excel;
+- CSV;
+- PDF.
+
+---
+
+# 113. OWNER DAILY REPORT
+
+Contoh:
+
+**Sudaya Coffee Daily Summary**
+
+Sales  
+Rp5.250.000
+
+Transactions  
+132
+
+Customers  
+115
+
+Average Ticket  
+Rp39.773
+
+Best Seller  
+Sudaya Coffee
+
+QRIS  
+62%
+
+Cash  
+28%
+
+Other  
+10%
+
+Waste  
+Rp85.000
+
+Cash Difference  
+Rp0
+
+---
+
+# 114. MVP PRIORITY
+
+Prioritas implementasi:
+
+### P0 — Critical
+
+- login;
+- employee;
+- attendance;
+- menu;
+- POS;
+- order;
+- payment;
+- order queue;
+- stock.
+
+### P1 — Important
+
+- dashboard;
+- stock opname;
+- customer;
+- QR ordering;
+- cash reconciliation;
+- approval.
+
+### P2 — Enhancement
+
+- loyalty;
+- voucher;
+- purchasing;
+- advanced CRM.
+
+---
+
+# 115. OUT OF SCOPE MVP
+
+Tidak masuk MVP awal:
+
+- offline POS;
+- automatic payroll;
+- marketplace integration;
+- accounting integration;
+- AI forecasting;
+- multi warehouse;
+- complex ERP.
+
+---
+
+# 116. PRODUCT ROADMAP
+
+## Phase 1 — OPERATE
+
+Fokus:
+
+**Operasional outlet digital.**
+
+Attendance + POS + Stock + Self Order.
+
+---
+
+## Phase 2 — CONTROL
+
+Fokus:
+
+**Kontrol bisnis.**
+
+Inventory advanced + Finance + CRM + Loyalty.
+
+---
+
+## Phase 3 — SCALE
+
+Fokus:
+
+**Ekspansi bisnis.**
+
+Multi outlet + integration + analytics.
+
+---
+
+# 117. DEVELOPMENT EPIC
+
+### EPIC 01
+Authentication & Authorization
+
+### EPIC 02
+Employee Management
+
+### EPIC 03
+Attendance & Face Recognition
+
+### EPIC 04
+Outlet
+
+### EPIC 05
+Product & Menu
+
+### EPIC 06
+Inventory
+
+### EPIC 07
+POS
+
+### EPIC 08
+Self Service Order
+
+### EPIC 09
+Order Queue/KDS
+
+### EPIC 10
+Payment
+
+### EPIC 11
+CRM
+
+### EPIC 12
+Loyalty
+
+### EPIC 13
+Finance
+
+### EPIC 14
+Reporting
+
+### EPIC 15
+Approval & Audit
+
+---
+
+# 118. DEVELOPMENT ORDER
+
+Urutan paling efisien:
+
+```text
+Authentication
+        ↓
+Outlet + Employee
+        ↓
+Menu
+        ↓
+POS
+        ↓
+Order Engine
+        ↓
+Payment
+        ↓
+Barista Queue
+        ↓
+Customer Self Order
+        ↓
+Inventory
+        ↓
+Attendance
+        ↓
+Dashboard
+```
+
+---
+
+# 119. CORE DATABASE PRINCIPLE
+
+Semua tabel transaksi sebaiknya mempunyai minimal:
+
+```text
+id
+company_id
+brand_id
+outlet_id
+created_at
+updated_at
+created_by
+```
+
+Ini penting agar sistem tidak perlu dibangun ulang ketika Sudaya berkembang menjadi multi-brand atau multi-outlet.
+
+---
+
+# 120. DEFINITION OF DONE MVP
+
+MVP dianggap berhasil apabila skenario berikut dapat berjalan dari awal sampai akhir:
+
+### Scenario A
+
+Barista datang.
+
+→ login  
+→ scan wajah  
+→ GPS valid  
+→ check-in.
+
+### Scenario B
+
+Customer datang.
+
+→ scan QR  
+→ pilih Caramel Macchiato  
+→ checkout  
+→ bayar QRIS  
+→ order SDY-045  
+→ masuk layar barista.
+
+### Scenario C
+
+Barista:
+
+→ melihat SDY-045  
+→ Preparing  
+→ Ready.
+
+Customer:
+
+→ melihat status Ready.
+
+### Scenario D
+
+Kasir menerima customer walk-in.
+
+→ input melalui POS  
+→ bayar cash  
+→ transaksi mendapat SDY-046.
+
+Urutan antrean tetap:
+
+SDY-045  
+SDY-046.
+
+### Scenario E
+
+Admin membuka dashboard.
+
+Dapat melihat:
+
+- penjualan;
+- jumlah transaksi;
+- metode pembayaran;
+- stock;
+- absensi.
+
+---
+
+# 121. CATATAN KHUSUS GEOFENCE 5 METER
+
+Requirement bisnis:
+
+**5 meter.**
+
+Namun GPS smartphone dapat mempunyai akurasi sekitar beberapa meter hingga puluhan meter tergantung:
+
+- perangkat;
+- bangunan;
+- cuaca;
+- satellite visibility;
+- jaringan.
+
+Karena itu implementasi sebaiknya menyimpan:
+
+```text
+radius = 5 meter
+gps_accuracy
+distance_to_outlet
+```
+
+dan radius dapat diubah Super Admin tanpa perubahan kode.
+
+Dengan demikian requirement 5 meter tetap diterapkan, tetapi operasional tidak terkunci jika pada lokasi nyata GPS tidak cukup presisi.
+
+---
+
+# 122. PRODUCT PRINCIPLE
+
+Sudaya Company tidak hanya menjadi aplikasi kasir.
+
+Sistem dirancang menjadi:
+
+> **Operating System untuk Sudaya Company**
+
+yang menghubungkan:
+
+**People + Attendance + Product + Inventory + Customer + Transaction + Finance + Data**
+
+dalam satu platform.
+
+---
+
+# 123. REKOMENDASI FINAL MVP
+
+Untuk deployment pertama, fitur yang paling tepat dibangun adalah:
+
+**Sudaya Staff**
+
+Attendance  
+POS  
+Order Queue  
+Stock
+
++
+
+**Sudaya Customer**
+
+Menu  
+QR Order  
+Checkout  
+Payment  
+Order Status
+
++
+
+**Sudaya Admin**
+
+Dashboard  
+Employee  
+Product  
+Inventory  
+Transaction  
+Attendance  
+Approval  
+Reports
+
+Dengan struktur tersebut Sudaya Coffee sudah memiliki fondasi sistem yang cukup kuat untuk menjalankan outlet pertama sekaligus menjadi dasar ekspansi Sudaya Company ke outlet dan bisnis berikutnya.
