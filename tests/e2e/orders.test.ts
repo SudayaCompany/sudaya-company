@@ -280,6 +280,30 @@ describe.skipIf(!hasLiveEnv)("transaksi end-to-end (POS, QR, kiosk, KDS)", () =>
       expect(Object.values(manifest.node).some((v) => v.exportedName === "placeOrderAction")).toBe(false);
     });
 
+    it("customer tidak bisa menandai order lunas (status, harga, QRIS, action kasir)", async () => {
+      const device = newDevice();
+      const res = await place(
+        { ...checkout(), status: "paid", paymentStatus: "paid", total: 1, subtotal: 1, orderNumber: "SDY-999" },
+        "qr_table",
+        device,
+      );
+      expect(res.status).toBe(201);
+      const [row] = await ctx.db.select().from(orders).where(eq(orders.id, res.body.orderId));
+      expect(row).toMatchObject({ status: "pending_payment", paymentStatus: "pending", total: 62000, orderNumber: null });
+
+      // Pembayaran online belum dikonfigurasi → tidak ada jalur "lunas" selain kasir.
+      const qris = await place({ ...checkout(), paymentMethod: "qris" }, "qr_table", device);
+      expect(qris.status).toBe(422);
+      expect(qris.body.error).toMatch(/online belum tersedia/);
+
+      // Action konfirmasi tunai tanpa session staf (dari halaman publik) ditolak.
+      const confirm = actionId(ORDER_ACTIONS, "confirmCashAction");
+      const anonymous = await callAction(`/order?outlet=${company.outletCode}`, confirm, [{ orderId: res.body.orderId, tenderedAmount: 1_000_000 }]);
+      expect(actionResult(anonymous.body)?.ok ?? false).toBe(false);
+      const [after] = await ctx.db.select().from(orders).where(eq(orders.id, res.body.orderId));
+      expect(after).toMatchObject({ status: "pending_payment", paymentStatus: "pending", orderNumber: null });
+    });
+
     it("halaman status menampilkan batas waktu bayar", async () => {
       // Perangkat baru: guestDevice sudah memakai kuota checkout di test sebelumnya.
       const res = await place(checkout(), "qr_table", newDevice());

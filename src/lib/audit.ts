@@ -1,3 +1,5 @@
+import { sql } from "drizzle-orm";
+
 import type { DbExecutor } from "@/db/client";
 import { auditLogs } from "@/db/schema";
 
@@ -31,5 +33,8 @@ export async function recordAudit(
     ...entry,
     ip: context.ip?.slice(0, 64) ?? null,
     userAgent: context.userAgent?.slice(0, 512) ?? null,
+    // Waktu DB saat insert (bukan awal transaksi): beberapa event dalam satu
+    // transaksi (mis. payment.confirmed → order.queued) tetap berurutan.
+    createdAt: sql`clock_timestamp()`,
   });
 }
