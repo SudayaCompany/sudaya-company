@@ -43,6 +43,13 @@
       "when": 1793270568709,
       "tag": "0005_inventory_document_ref",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793330523623,
+      "tag": "0006_attendance",
+      "breakpoints": true
     }
   ]
 }

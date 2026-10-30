@@ -81,6 +81,14 @@ export const outlets = pgTable(
       "outlets_pending_payment_ttl_range",
       sql`${t.pendingPaymentTtlMinutes} between 1 and 1440`,
     ),
+    check(
+      "outlets_attendance_radius_range",
+      sql`${t.attendanceRadiusMeter} between 1 and 1000`,
+    ),
+    check(
+      "outlets_coordinates_valid",
+      sql`(${t.latitude} is null and ${t.longitude} is null) or (${t.latitude} between -90 and 90 and ${t.longitude} between -180 and 180)`,
+    ),
   ],
 ).enableRLS();
 

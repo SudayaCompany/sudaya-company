@@ -2,6 +2,7 @@ import "server-only";
 
 import { MENU_IMAGE_BUCKET, type MenuImageStorage } from "@/lib/catalog/images";
 import { EVIDENCE_BUCKET, type EvidenceStorage } from "@/lib/inventory/evidence";
+import { ATTENDANCE_EVIDENCE_BUCKET } from "@/lib/inventory/evidence-types";
 
 import { createAdminClient } from "./admin";
 
@@ -29,25 +30,32 @@ export const menuImageStorage: MenuImageStorage = {
  * Bukti foto inventory (bucket PRIVATE). Tidak ada URL publik: halaman
  * membuka foto lewat signed URL singkat setelah cek permission.
  */
-export const inventoryEvidenceStorage: EvidenceStorage = {
-  async upload(path, bytes, contentType) {
-    const { error } = await createAdminClient()
-      .storage.from(EVIDENCE_BUCKET)
-      .upload(path, bytes, { contentType, upsert: false });
-    if (error) throw new Error(`Upload bukti gagal: ${error.message}`);
-  },
+function privateBucketStorage(bucket: string): EvidenceStorage {
+  return {
+    async upload(path, bytes, contentType) {
+      const { error } = await createAdminClient()
+        .storage.from(bucket)
+        .upload(path, bytes, { contentType, upsert: false });
+      if (error) throw new Error(`Upload bukti gagal: ${error.message}`);
+    },
 
-  async remove(paths) {
-    if (paths.length === 0) return;
-    const { error } = await createAdminClient().storage.from(EVIDENCE_BUCKET).remove(paths);
-    if (error) throw new Error(`Hapus bukti gagal: ${error.message}`);
-  },
+    async remove(paths) {
+      if (paths.length === 0) return;
+      const { error } = await createAdminClient().storage.from(bucket).remove(paths);
+      if (error) throw new Error(`Hapus bukti gagal: ${error.message}`);
+    },
 
-  async signedUrl(path, expiresInSeconds) {
-    const { data, error } = await createAdminClient()
-      .storage.from(EVIDENCE_BUCKET)
-      .createSignedUrl(path, expiresInSeconds);
-    if (error || !data) throw new Error(`Signed URL gagal: ${error?.message ?? "kosong"}`);
-    return data.signedUrl;
-  },
-};
+    async signedUrl(path, expiresInSeconds) {
+      const { data, error } = await createAdminClient()
+        .storage.from(bucket)
+        .createSignedUrl(path, expiresInSeconds);
+      if (error || !data) throw new Error(`Signed URL gagal: ${error?.message ?? "kosong"}`);
+      return data.signedUrl;
+    },
+  };
+}
+
+export const inventoryEvidenceStorage: EvidenceStorage = privateBucketStorage(EVIDENCE_BUCKET);
+
+/** Bukti tugas luar karyawan (bucket PRIVATE). */
+export const attendanceEvidenceStorage: EvidenceStorage = privateBucketStorage(ATTENDANCE_EVIDENCE_BUCKET);

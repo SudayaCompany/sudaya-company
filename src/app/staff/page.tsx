@@ -1,7 +1,9 @@
 import {
+  BriefcaseIcon,
   ClipboardCheckIcon,
   MonitorIcon,
   PackageIcon,
+  ScanFaceIcon,
   ShoppingBagIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -39,7 +41,21 @@ const SHORTCUTS: Shortcut[] = [
     description: "Check-in & check-out dengan wajah + lokasi",
     icon: ClipboardCheckIcon,
     permission: "attendance.checkin",
-    href: null,
+    href: "/staff/attendance",
+  },
+  {
+    label: "Tugas luar",
+    description: "Ajukan tugas di luar outlet",
+    icon: BriefcaseIcon,
+    permission: "attendance.checkin",
+    href: "/staff/outside-duty",
+  },
+  {
+    label: "Registrasi wajah",
+    description: "Persetujuan & status data wajah",
+    icon: ScanFaceIcon,
+    permission: "attendance.checkin",
+    href: "/staff/face-enrollment",
   },
   {
     label: "Order / POS",

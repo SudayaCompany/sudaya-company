@@ -273,6 +273,52 @@ Halaman di `/admin/inventory` (ringkasan), `items`, `movements`, `stock-in`,
   opname terakhir, approval menunggu, item hampir kedaluwarsa. Tidak ada angka
   contoh: semua dari ledger.
 
+## Karyawan & absensi (Epic 05)
+
+Status: **Core Attendance Implemented — Biometric Integration Pending.**
+
+- **Karyawan** (`/admin/employees`): Employee ID unik per company, jabatan,
+  outlet absensi, tanggal bergabung, status aktif, status registrasi wajah.
+  Akun login & role tetap dikelola di `/admin/users` lalu ditautkan; password
+  tidak pernah disimpan di data karyawan. Hanya akun aktif + karyawan aktif +
+  outlet aktif yang bisa absen. Menonaktifkan karyawan mencabut registrasi wajah.
+- **Absensi staf** (`/staff/attendance`): online → kamera → GPS → verifikasi
+  wajah (liveness + face matching di provider) → check-in/out. Waktu selalu dari
+  database; satu sesi terbuka per karyawan (unique index); check-out kondisional
+  (dua check-out bersamaan → satu perubahan); `working_minutes` dari timestamp DB;
+  sesi lintas tengah malam memakai tanggal bisnis saat check-in.
+- **Verifikasi wajah**: abstraksi provider di
+  [src/lib/attendance/face-provider.ts](src/lib/attendance/face-provider.ts).
+  Sesi verifikasi diterbitkan server untuk satu karyawan dan hanya bisa dipakai
+  sekali; keputusan lulus/gagal dibuat server dengan ambang tersimpan. **Belum
+  ada provider yang disetujui**, jadi aplikasi menampilkan "Layanan verifikasi
+  wajah belum dikonfigurasi", tidak ada absensi yang ditandai biometrik, dan
+  tidak ada mode mock (implementasi palsu hanya di automated test).
+- **Geofence**: Haversine di server, radius per outlet (`attendance_radius_meter`,
+  default 5 m, diatur Super Admin), batas akurasi GPS (`max_gps_accuracy_meter`),
+  posisi cache lama ditolak. Outlet tanpa koordinat → absensi reguler tidak bisa
+  dipakai (tidak ada koordinat contoh). GPS browser bisa dipalsukan — lihat
+  [docs/PRIVACY_BIOMETRIC.md](docs/PRIVACY_BIOMETRIC.md).
+- **Tugas luar** (`/staff/outside-duty`, `/admin/outside-duty`): approval
+  `attendance.approve_outside_duty`, pemohon tidak bisa menyetujui sendiri; di
+  jam tugas yang disetujui geofence outlet tidak berlaku, wajah & GPS tetap dicatat.
+- **Koreksi manual** (`/staff/attendance/correction`): untuk provider belum
+  tersedia/gagal, GPS tidak akurat, atau lupa check-out. Disetujui Manager
+  (`approval.approve`, bukan pemohon) dan berlabel `manual_correction` — tidak
+  pernah menyamar sebagai absensi biometrik.
+- **Dashboard & laporan** (`/admin/attendance`, `/admin/attendance/reports`):
+  jam kerja aktual, filter tanggal/nama/outlet/status; laporan memisahkan
+  terverifikasi biometrik, koreksi manual, tugas luar, dan data belum lengkap;
+  unduh CSV / Excel (aman dari formula injection, setiap ekspor diaudit).
+  Tanpa jadwal shift resmi, "belum check-in" tidak dihitung terlambat/absen.
+- **Privasi** (`/staff/face-enrollment`): pemberitahuan privasi berversi,
+  persetujuan eksplisit tercatat, penarikan persetujuan & penghapusan registrasi
+  oleh karyawan maupun admin. Checklist DPIA, review provider, retensi, dan hak
+  subjek data ada di [docs/PRIVACY_BIOMETRIC.md](docs/PRIVACY_BIOMETRIC.md).
+- **Audit**: consent/enrollment/pencabutan, check-in/out, verifikasi & lokasi
+  ditolak (tanpa data biometrik), tugas luar, koreksi, perubahan geofence &
+  pengaturan, ekspor laporan.
+
 ## Test
 
 | Script             | Isi                                                          |
@@ -299,7 +345,7 @@ bawah 22.
 | `npm run db:migrate`      | Terapkan migrasi ke database                    |
 | `npm run db:seed`         | Seed company/brand/outlet + RBAC (idempotent)   |
 | `npm run admin:bootstrap` | Siapkan Super Admin pertama                     |
-| `npm run storage:setup`   | Siapkan bucket foto menu & bukti stok (idempotent) |
+| `npm run storage:setup`   | Siapkan bucket foto menu, bukti stok & tugas luar (idempotent) |
 | `npm run db:studio`       | Buka Drizzle Studio                             |
 
 ## Struktur
@@ -316,6 +362,7 @@ src/
   lib/auth/       RBAC katalog, policy murni, DAL session, operasi admin, bootstrap
   lib/catalog/    Menu: admin ops, storefront, harga/quote, validasi, foto
   lib/inventory/  Stok: ledger, operasi, query, satuan, approval, opname
+  lib/attendance/ Karyawan, absensi, geofence, provider wajah, tugas luar, koreksi
   lib/orders/     Order engine, checkout limit, token guest, realtime
   lib/security/   IP tepercaya & rate limit (Postgres)
   lib/supabase/   Supabase client: server, browser, proxy, admin (service role)

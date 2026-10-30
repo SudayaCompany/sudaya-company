@@ -12,7 +12,15 @@ import { authUsers } from "drizzle-orm/supabase";
 import { createDatabase } from "@/db/client";
 import {
   approvals,
+  attendanceCorrections,
+  attendanceSettings,
+  attendances,
   auditLogs,
+  biometricConsents,
+  employees,
+  faceEnrollments,
+  faceVerificationSessions,
+  outsideDutyRequests,
   brands,
   categories,
   companies,
@@ -37,7 +45,7 @@ import { seedInitialData } from "@/db/seed";
 import { loadCurrentUser, type CurrentUser } from "@/lib/auth/access";
 import type { RoleCode } from "@/lib/auth/rbac";
 import { MENU_IMAGE_BUCKET } from "@/lib/catalog/image-url";
-import { EVIDENCE_BUCKET } from "@/lib/inventory/evidence-types";
+import { ATTENDANCE_EVIDENCE_BUCKET, EVIDENCE_BUCKET } from "@/lib/inventory/evidence-types";
 import { rateLimitKeyHash } from "@/lib/security/rate-limit";
 
 /** PNG 1×1 yang valid, untuk test upload foto. */
@@ -187,6 +195,16 @@ export function createLiveContext() {
           await tx.execute(sql`select set_config('sudaya.ledger_maintenance', 'on', true)`);
           await tx.delete(inventoryTransactions).where(inArray(inventoryTransactions.companyId, companyIds));
         });
+        // Absensi (merujuk approvals, sesi verifikasi, karyawan).
+        await db.delete(attendanceCorrections).where(inArray(attendanceCorrections.companyId, companyIds));
+        await db.delete(attendances).where(inArray(attendances.companyId, companyIds));
+        const companyEmployees = db.select({ id: employees.id }).from(employees).where(inArray(employees.companyId, companyIds));
+        await db.delete(faceEnrollments).where(inArray(faceEnrollments.employeeId, companyEmployees));
+        await db.delete(faceVerificationSessions).where(inArray(faceVerificationSessions.companyId, companyIds));
+        await db.delete(biometricConsents).where(inArray(biometricConsents.companyId, companyIds));
+        await db.delete(outsideDutyRequests).where(inArray(outsideDutyRequests.companyId, companyIds));
+        await db.delete(attendanceSettings).where(inArray(attendanceSettings.companyId, companyIds));
+        await db.delete(employees).where(inArray(employees.companyId, companyIds));
         await db.delete(approvals).where(inArray(approvals.companyId, companyIds));
         await db.delete(orders).where(inArray(orders.companyId, companyIds));
         await db
@@ -217,14 +235,14 @@ export function createLiveContext() {
             const paths = (files ?? []).map((f) => `${companyId}/${folder.name}/${f.name}`);
             if (paths.length) await admin.storage.from(MENU_IMAGE_BUCKET).remove(paths);
           }
-          // Bukti foto inventory: <companyId>/<outletId>/<file>.
-          const { data: evidenceFolders } = await admin.storage.from(EVIDENCE_BUCKET).list(companyId);
-          for (const folder of evidenceFolders ?? []) {
-            const { data: files } = await admin.storage
-              .from(EVIDENCE_BUCKET)
-              .list(`${companyId}/${folder.name}`);
-            const paths = (files ?? []).map((f) => `${companyId}/${folder.name}/${f.name}`);
-            if (paths.length) await admin.storage.from(EVIDENCE_BUCKET).remove(paths);
+          // Bukti foto inventory & tugas luar: <companyId>/<outletId>/<file>.
+          for (const bucket of [EVIDENCE_BUCKET, ATTENDANCE_EVIDENCE_BUCKET]) {
+            const { data: evidenceFolders } = await admin.storage.from(bucket).list(companyId);
+            for (const folder of evidenceFolders ?? []) {
+              const { data: files } = await admin.storage.from(bucket).list(`${companyId}/${folder.name}`);
+              const paths = (files ?? []).map((f) => `${companyId}/${folder.name}/${f.name}`);
+              if (paths.length) await admin.storage.from(bucket).remove(paths);
+            }
           }
         }
         // Katalog dulu (FK ke brand/outlet); cascade ke outlet_products,

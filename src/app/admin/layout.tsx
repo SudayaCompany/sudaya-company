@@ -1,5 +1,8 @@
 import {
+  BriefcaseIcon,
+  ClockIcon,
   CoffeeIcon,
+  IdCardIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
   PackageIcon,
@@ -25,6 +28,9 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboardIcon /> },
   { href: "/admin/orders", label: "Order", icon: <ReceiptTextIcon /> },
   { href: "/admin/inventory", label: "Inventory", icon: <PackageIcon /> },
+  { href: "/admin/attendance", label: "Absensi", icon: <ClockIcon /> },
+  { href: "/admin/outside-duty", label: "Tugas luar", icon: <BriefcaseIcon /> },
+  { href: "/admin/employees", label: "Karyawan", icon: <IdCardIcon /> },
   { href: "/admin/products", label: "Produk", icon: <CoffeeIcon /> },
   { href: "/admin/categories", label: "Kategori", icon: <TagsIcon /> },
   { href: "/admin/modifiers", label: "Modifier", icon: <SlidersHorizontalIcon /> },

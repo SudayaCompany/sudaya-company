@@ -66,6 +66,7 @@ export const approvalType = pgEnum("approval_type", [
   "expense",
   "outside_duty",
   "stock_opname",
+  "attendance_correction",
 ]);
 
 // PRD §18
@@ -105,6 +106,34 @@ export const stockOpnameStatus = pgEnum("stock_opname_status", [
 export const attendanceStatus = pgEnum("attendance_status", [
   "checked_in",
   "checked_out",
+]);
+
+/**
+ * Cara satu sisi absensi (masuk/pulang) dicatat. Koreksi manual yang
+ * disetujui TIDAK pernah berlabel biometrik.
+ */
+export const attendanceMethod = pgEnum("attendance_method", [
+  "biometric",
+  "manual_correction",
+]);
+
+export const faceSessionPurpose = pgEnum("face_session_purpose", [
+  "enrollment",
+  "check_in",
+  "check_out",
+]);
+
+export const faceSessionStatus = pgEnum("face_session_status", [
+  "issued",
+  "consumed",
+  "failed",
+]);
+
+export const attendanceCorrectionKind = pgEnum("attendance_correction_kind", [
+  /** Tidak ada absensi sama sekali → buat sesi masuk+pulang. */
+  "missing_attendance",
+  /** Sesi terbuka tanpa check-out → isi jam pulang. */
+  "missing_check_out",
 ]);
 
 export const cashSessionStatus = pgEnum("cash_session_status", [
